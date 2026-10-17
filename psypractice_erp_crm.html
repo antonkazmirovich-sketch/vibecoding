@@ -1,0 +1,2903 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PsyPractice ERP & CRM — Рабочая среда психолога</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        sage: {
+                            50: '#f4f7f5',
+                            100: '#e3ebe6',
+                            200: '#c8d8ce',
+                            300: '#a3beae',
+                            400: '#7b9f8b',
+                            500: '#5c826e',
+                            600: '#476857',
+                            700: '#3a5447',
+                            800: '#31443b',
+                            900: '#293932',
+                        },
+                        warm: {
+                            50: '#faf8f5',
+                            100: '#f3efe8',
+                            200: '#e6dec8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #faf8f5;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .blur-notes {
+            filter: blur(5px);
+            user-select: none;
+            transition: filter 0.25s ease;
+        }
+        .blur-notes:hover, .blur-notes.revealed {
+            filter: blur(0);
+            user-select: auto;
+        }
+        .fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden select-none sm:select-auto">
+
+    <!-- Боковая панель навигации (Sidebar) -->
+    <aside class="w-64 bg-slate-900 text-slate-200 flex flex-col justify-between shrink-0 transition-all duration-300 z-30 hidden md:flex" id="sidebar">
+        <div>
+            <!-- Логотип -->
+            <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-800">
+                <div class="w-9 h-9 rounded-xl bg-sage-500 flex items-center justify-center text-white shadow-md shadow-sage-500/20">
+                    <i class="ph ph-brain text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-white tracking-tight text-base block leading-none">PsyPractice</span>
+                    <span class="text-[11px] text-sage-300 font-medium tracking-wider uppercase">ERP & CRM система</span>
+                </div>
+            </div>
+
+            <!-- Меню навигации -->
+            <div class="p-3 space-y-1">
+                <div class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Управление</div>
+                
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all bg-sage-600 text-white shadow-sm">
+                    <i class="ph ph-chart-polar text-lg"></i>
+                    <span>Дашборд и Аналитика</span>
+                </button>
+
+                <button onclick="switchTab('calendar')" id="nav-calendar" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-calendar-check text-lg"></i>
+                        <span>Календарь и Сессии</span>
+                    </div>
+                    <span id="badge-today-sessions" class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full">0</span>
+                </button>
+
+                <button onclick="switchTab('clients')" id="nav-clients" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-users-three text-lg"></i>
+                        <span>База клиентов</span>
+                    </div>
+                    <span id="badge-active-clients" class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full">0</span>
+                </button>
+
+                <button onclick="switchTab('finances')" id="nav-finances" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                    <i class="ph ph-wallet text-lg"></i>
+                    <span>Финансы и Затраты</span>
+                </button>
+
+                <div class="pt-4 pb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Справочники (Модуль А)</div>
+
+                <button onclick="switchTab('catalogs')" id="nav-catalogs" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                    <i class="ph ph-buildings text-lg"></i>
+                    <span>Кабинеты и Услуги</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Быстрые действия и статус внизу сайдбара -->
+        <div class="p-4 border-t border-slate-800 space-y-3 bg-slate-900/50">
+            <div class="bg-slate-800/80 rounded-xl p-3 border border-slate-700/60">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                    <span>Чистая прибыль (мес.)</span>
+                    <i class="ph ph-trend-up text-emerald-400"></i>
+                </div>
+                <div id="sidebar-net-profit" class="text-base font-bold text-white">0 ₽</div>
+                <div class="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                    <span>К доплате от клиентов:</span>
+                    <span id="sidebar-unpaid" class="text-amber-400 font-medium">0 ₽</span>
+                </div>
+            </div>
+
+            <button onclick="openResetModal()" class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-rose-300 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-800/50 transition-all">
+                <i class="ph ph-arrows-counter-clockwise"></i>
+                <span>Сбросить демо-данные</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Основная область контента -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- Верхняя шапка (Header) -->
+        <header class="h-16 bg-white/90 backdrop-blur border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between shrink-0 z-20">
+            <div class="flex items-center gap-3">
+                <!-- Мобильное меню -->
+                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+                    <i class="ph ph-list text-xl"></i>
+                </button>
+                <div>
+                    <h1 id="page-title" class="text-lg sm:text-xl font-bold text-slate-800">Финансовая и управленческая аналитика</h1>
+                    <p id="page-subtitle" class="text-xs text-slate-500 hidden sm:block">Мониторинг ключевых показателей практики, онлайн и офлайн сессий</p>
+                </div>
+            </div>
+
+            <!-- Быстрые кнопки действий в шапке -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="openSessionModal()" class="flex items-center gap-2 bg-sage-600 hover:bg-sage-700 text-white text-xs sm:text-sm font-medium px-3.5 py-2 rounded-xl shadow-sm transition-all">
+                    <i class="ph ph-calendar-plus text-base"></i>
+                    <span>Записать на сессию</span>
+                </button>
+                <button onclick="openExpenseModal('tax')" class="hidden sm:flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs sm:text-sm font-medium px-3 py-2 rounded-xl transition-all" title="Быстрая фиксация налога вручную">
+                    <i class="ph ph-receipt text-base text-amber-600"></i>
+                    <span>Внести налог</span>
+                </button>
+                <button onclick="openClientModal()" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all" title="Новый клиент">
+                    <i class="ph ph-user-plus text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Мобильная навигация (Drawer) -->
+        <div id="mobile-sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 hidden md:hidden"></div>
+        <div id="mobile-sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white z-50 transform -translate-x-full transition-transform duration-300 md:hidden flex flex-col justify-between p-4">
+            <div>
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-sage-500 flex items-center justify-center text-white">
+                            <i class="ph ph-brain text-lg"></i>
+                        </div>
+                        <span class="font-bold">PsyPractice</span>
+                    </div>
+                    <button onclick="toggleMobileSidebar()" class="p-1 text-slate-400 hover:text-white">
+                        <i class="ph ph-x text-xl"></i>
+                    </button>
+                </div>
+                <div class="mt-4 space-y-1">
+                    <button onclick="switchTab('dashboard'); toggleMobileSidebar();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800">
+                        <i class="ph ph-chart-polar text-lg text-sage-400"></i> Дашборд и Аналитика
+                    </button>
+                    <button onclick="switchTab('calendar'); toggleMobileSidebar();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800">
+                        <i class="ph ph-calendar-check text-lg text-sage-400"></i> Календарь и Сессии
+                    </button>
+                    <button onclick="switchTab('clients'); toggleMobileSidebar();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800">
+                        <i class="ph ph-users-three text-lg text-sage-400"></i> База клиентов
+                    </button>
+                    <button onclick="switchTab('finances'); toggleMobileSidebar();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800">
+                        <i class="ph ph-wallet text-lg text-sage-400"></i> Финансы и Затраты
+                    </button>
+                    <button onclick="switchTab('catalogs'); toggleMobileSidebar();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800">
+                        <i class="ph ph-buildings text-lg text-sage-400"></i> Кабинеты и Услуги
+                    </button>
+                </div>
+            </div>
+            <button onclick="openResetModal(); toggleMobileSidebar();" class="w-full py-2 text-xs text-rose-300 border border-rose-800/50 rounded-lg">
+                Сбросить демо-данные
+            </button>
+        </div>
+
+        <!-- Контейнер вкладок (Scrollable Area) -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+
+            <!-- ========================================== -->
+            <!-- ВКЛАДКА 1: ДАШБОРД И АНАЛИТИКА (МОДУЛЬ В) -->
+            <!-- ========================================== -->
+            <section id="tab-dashboard" class="tab-content fade-in space-y-6">
+                
+                <!-- Панель фильтрации периода -->
+                <div class="bg-white p-3.5 rounded-2xl shadow-xs border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-2">Период аналитики:</span>
+                        <div class="inline-flex rounded-xl bg-slate-100 p-1">
+                            <button onclick="setAnalyticsPeriod('week')" id="period-week" class="period-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition-all">Неделя</button>
+                            <button onclick="setAnalyticsPeriod('month')" id="period-month" class="period-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-900 shadow-xs transition-all">Текущий месяц</button>
+                            <button onclick="setAnalyticsPeriod('quarter')" id="period-quarter" class="period-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition-all">Квартал</button>
+                            <button onclick="setAnalyticsPeriod('year')" id="period-year" class="period-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition-all">Год</button>
+                            <button onclick="setAnalyticsPeriod('all')" id="period-all" class="period-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition-all">Все время</button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-500 flex items-center gap-2">
+                        <i class="ph ph-info text-sage-600 text-sm"></i>
+                        <span id="analytics-date-range-label">Анализ данных за текущий месяц</span>
+                    </div>
+                </div>
+
+                <!-- Главные KPI Карточки -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- KPI 1: Валовая выручка -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Валовая выручка</span>
+                                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                    <i class="ph ph-hand-coins text-xl"></i>
+                                </div>
+                            </div>
+                            <div id="kpi-revenue" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-2">0 ₽</div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Ожидается к доплате:</span>
+                            <span id="kpi-receivables" class="font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">0 ₽</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2: Общие затраты (вкл. аренду и налоги) -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Общие затраты</span>
+                                <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                                    <i class="ph ph-Receipt text-xl"></i>
+                                </div>
+                            </div>
+                            <div id="kpi-expenses" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-2">0 ₽</div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Из них авто-аренда / налоги:</span>
+                            <span id="kpi-expenses-sub" class="font-medium text-slate-700">0 ₽ / 0 ₽</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI 3: Чистая прибыль -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col justify-between relative overflow-hidden">
+                        <div class="absolute right-0 top-0 bottom-0 w-1.5 bg-sage-500"></div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Чистая прибыль</span>
+                                <div class="w-9 h-9 rounded-xl bg-sage-50 text-sage-600 flex items-center justify-center">
+                                    <i class="ph ph-chart-line-up text-xl"></i>
+                                </div>
+                            </div>
+                            <div id="kpi-profit" class="text-2xl sm:text-3xl font-bold text-sage-700 mt-2">0 ₽</div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Рентабельность практики:</span>
+                            <span id="kpi-margin" class="font-semibold text-sage-700 bg-sage-50 px-2 py-0.5 rounded-md">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI 4: Сессии и стоимость часа -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Проведено сессий</span>
+                                <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                    <i class="ph ph-clock-user text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline gap-2 mt-2">
+                                <span id="kpi-sessions-total" class="text-2xl sm:text-3xl font-bold text-slate-800">0</span>
+                                <span id="kpi-sessions-split" class="text-xs text-slate-500">(0 онл / 0 офл)</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Чистая ставка часа:</span>
+                            <span id="kpi-hourly-rate" class="font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">0 ₽/ч</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ряд графиков: Структура доходов и Структура расходов -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- График 1: Доходы Онлайн vs Офлайн + по категориям -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80 lg:col-span-2 flex flex-col justify-between">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Структура доходов и форматов работы</h3>
+                                <p class="text-xs text-slate-500">Сравнение поступлений Онлайн и Офлайн, а также разрезы по видам терапии</p>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs">
+                                <span class="flex items-center gap-1.5 font-medium text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Онлайн: <strong id="stat-rev-online">0 ₽</strong></span>
+                                <span class="flex items-center gap-1.5 font-medium text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-sage-500"></span> Офлайн: <strong id="stat-rev-offline">0 ₽</strong></span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center my-auto">
+                            <div class="h-56 relative flex items-center justify-center">
+                                <canvas id="chartRevenueFormat"></canvas>
+                            </div>
+                            <div class="h-56 relative flex items-center justify-center">
+                                <canvas id="chartRevenueCategory"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- График 2: Структура затрат -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col justify-between">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-slate-800 text-base">Структура затрат</h3>
+                            <p class="text-xs text-slate-500">Аренда кабинетов, налоги, супервизия и маркетинг</p>
+                        </div>
+                        <div class="h-52 relative flex items-center justify-center">
+                            <canvas id="chartExpenses"></canvas>
+                        </div>
+                        <div id="expenses-breakdown-list" class="mt-4 space-y-1.5 text-xs border-t border-slate-100 pt-3">
+                            <!-- Генерируется через JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ряд аналитики: Динамика клиентской базы и Загрузка кабинетов -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Карточка: Динамика клиентской базы и удержание -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Динамика клиентской базы и удержание</h3>
+                                <p class="text-xs text-slate-500">Возвращаемость клиентов (Retention) и формат терапии</p>
+                            </div>
+                            <span class="p-2 rounded-xl bg-slate-100 text-slate-600"><i class="ph ph-users-four text-lg"></i></span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3 mb-5">
+                            <div class="bg-warm-50 p-3.5 rounded-xl border border-slate-200/60">
+                                <div class="text-xs text-slate-500">Активные клиенты</div>
+                                <div id="client-stat-active" class="text-xl font-bold text-slate-800 mt-1">0</div>
+                                <div id="client-stat-format-split" class="text-[11px] text-slate-400 mt-0.5">0 онл / 0 офл</div>
+                            </div>
+                            <div class="bg-warm-50 p-3.5 rounded-xl border border-slate-200/60">
+                                <div class="text-xs text-slate-500">Удержание (2+ сессии)</div>
+                                <div id="client-stat-retention" class="text-xl font-bold text-emerald-600 mt-1">0%</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">Повторные визиты</div>
+                            </div>
+                            <div class="bg-warm-50 p-3.5 rounded-xl border border-slate-200/60">
+                                <div class="text-xs text-slate-500">Средний LTV клиента</div>
+                                <div id="client-stat-ltv" class="text-xl font-bold text-indigo-600 mt-1">0 ₽</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">За все время</div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Топ клиентов по количеству сессий за период</div>
+                            <div id="top-clients-list" class="space-y-2">
+                                <!-- Заполняется JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Карточка: Загрузка кабинетов и окупаемость офлайн-точек -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Загрузка кабинетов и окупаемость</h3>
+                                <p class="text-xs text-slate-500">Часы бронирования, затраты на аренду и генерируемая выручка</p>
+                            </div>
+                            <span class="p-2 rounded-xl bg-slate-100 text-slate-600"><i class="ph ph-armchair text-lg"></i></span>
+                        </div>
+
+                        <div id="office-utilization-list" class="space-y-3.5">
+                            <!-- Заполняется JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- ВКЛАДКА 2: КАЛЕНДАРЬ И ЗАПИСЬ (МОДУЛЬ Б)   -->
+            <!-- ========================================== -->
+            <section id="tab-calendar" class="tab-content hidden fade-in space-y-5">
+                
+                <!-- Панель управления календарем -->
+                <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
+                    <!-- Переключатели вида -->
+                    <div class="flex items-center gap-2">
+                        <div class="inline-flex rounded-xl bg-slate-100 p-1">
+                            <button onclick="setCalendarView('day')" id="cal-view-day" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600">День</button>
+                            <button onclick="setCalendarView('week')" id="cal-view-week" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-900 shadow-xs">Неделя</button>
+                            <button onclick="setCalendarView('month')" id="cal-view-month" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600">Месяц</button>
+                            <button onclick="setCalendarView('list')" id="cal-view-list" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600">Список</button>
+                        </div>
+                    </div>
+
+                    <!-- Навигация по датам -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="navigateCalendar(-1)" class="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600">
+                            <i class="ph ph-caret-left"></i>
+                        </button>
+                        <button onclick="navigateCalendar(0)" class="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-700">
+                            Сегодня
+                        </button>
+                        <span id="calendar-current-label" class="text-sm font-bold text-slate-800 min-w-[160px] text-center">Октябрь 2026</span>
+                        <button onclick="navigateCalendar(1)" class="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600">
+                            <i class="ph ph-caret-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Фильтры календаря -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <select id="cal-filter-format" onchange="renderCalendar()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-sage-500">
+                            <option value="all">Все форматы</option>
+                            <option value="online">Только Онлайн</option>
+                            <option value="offline">Только Офлайн</option>
+                        </select>
+                        <select id="cal-filter-payment" onchange="renderCalendar()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-sage-500">
+                            <option value="all">Любой статус оплаты</option>
+                            <option value="unpaid">Не оплачено</option>
+                            <option value="prepaid">Внесена предоплата</option>
+                            <option value="paid">Оплачено полностью</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Легенда статусов оплаты -->
+                <div class="flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-slate-500">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <span class="font-medium text-slate-600">Индикация оплаты:</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Оплачено полностью</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Внесена предоплата (ожидается остаток)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Не оплачено</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Возврат / Отмена</span>
+                    </div>
+                    <div class="text-slate-400">Нажмите на карточку сессии для редактирования или приема оплаты</div>
+                </div>
+
+                <!-- Контейнер отрисовки календаря -->
+                <div id="calendar-container" class="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
+                    <!-- Заполняется динамически в зависимости от режима (День / Неделя / Месяц / Список) -->
+                </div>
+
+            </section>
+
+            <!-- ========================================== -->
+            <!-- ВКЛАДКА 3: КЛИЕНТЫ (МОДУЛЬ А.1)            -->
+            <!-- ========================================== -->
+            <section id="tab-clients" class="tab-content hidden fade-in space-y-5">
+                
+                <!-- Поиск и фильтры клиентов -->
+                <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                    <div class="relative flex-1 min-w-[240px]">
+                        <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="client-search" oninput="renderClients()" placeholder="Поиск по ФИО, телефону или нику в мессенджере..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-sage-500 focus:bg-white transition-all">
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <select id="client-filter-status" onchange="renderClients()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-sage-500">
+                            <option value="active">Активные клиенты</option>
+                            <option value="archived">В архиве</option>
+                            <option value="all">Все статусы</option>
+                        </select>
+
+                        <select id="client-filter-format" onchange="renderClients()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-sage-500">
+                            <option value="all">Все форматы</option>
+                            <option value="online">Онлайн по умолчанию</option>
+                            <option value="offline">Офлайн по умолчанию</option>
+                        </select>
+
+                        <button onclick="openClientModal()" class="flex items-center gap-2 bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xs transition-all">
+                            <i class="ph ph-user-plus text-sm"></i>
+                            <span>Добавить клиента</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Сетка карточек клиентов -->
+                <div id="clients-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <!-- Генерируется через JS -->
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- ВКЛАДКА 4: ФИНАНСЫ И ЗАТРАТЫ (МОДУЛЬ А.4)  -->
+            <!-- ========================================== -->
+            <section id="tab-finances" class="tab-content hidden fade-in space-y-6">
+                
+                <!-- Верхняя сводка по затратам и быстрые кнопки -->
+                <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800">Журнал расходов, налогов и автоматической аренды</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Налогообложение фиксируется вручную как отдельная статья затрат. Аренда кабинетов начисляется автоматически из офлайн-сессий.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <button onclick="openExpenseModal('tax')" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xs transition-all">
+                            <i class="ph ph-bank text-base"></i>
+                            <span>Внести налоговый платеж</span>
+                        </button>
+                        <button onclick="openExpenseModal()" class="flex items-center gap-2 bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xs transition-all">
+                            <i class="ph ph-plus-circle text-base"></i>
+                            <span>Добавить расход</span>
+                        </button>
+                        <button onclick="openExpenseCategoryModal()" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium px-3.5 py-2.5 rounded-xl transition-all">
+                            <i class="ph ph-folders text-base"></i>
+                            <span>Новая статья затрат</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Таблица всех расходов (2 колонки) -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                            <h3 class="font-bold text-slate-800 text-sm">Операционный журнал затрат (включая авто-бронирование кабинетов)</h3>
+                            <select id="finance-filter-category" onchange="renderFinances()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700">
+                                <option value="all">Все статьи затрат</option>
+                            </select>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase text-slate-400 bg-slate-50/50">
+                                        <th class="py-3 px-4">Дата</th>
+                                        <th class="py-3 px-4">Статья затрат</th>
+                                        <th class="py-3 px-4">Тип</th>
+                                        <th class="py-3 px-4">Комментарий / Основание</th>
+                                        <th class="py-3 px-4 text-right">Сумма (₽)</th>
+                                        <th class="py-3 px-4 text-right">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expenses-table-body" class="divide-y divide-slate-100 text-xs">
+                                    <!-- Заполняется через JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Справочник статей затрат (1 колонка) -->
+                    <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-slate-800 text-sm">Справочник статей затрат</h3>
+                                <span class="text-[11px] text-slate-400">Модуль А.4</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4">Категории делятся на постоянные (подписки, базовая супервизия) и переменные (почасовая аренда, реклама, налоги).</p>
+                            
+                            <div id="expense-categories-list" class="space-y-2.5">
+                                <!-- Заполняется через JS -->
+                            </div>
+                        </div>
+
+                        <div class="mt-6 p-3.5 rounded-xl bg-warm-50 border border-slate-200/60 text-xs text-slate-600 space-y-1">
+                            <div class="font-semibold text-slate-800 flex items-center gap-1.5">
+                                <i class="ph ph-lightbulb text-amber-500 text-base"></i>
+                                Как считается аренда?
+                            </div>
+                            <p class="text-[11px] leading-relaxed text-slate-500">
+                                Когда вы создаете офлайн-сессию и выбираете кабинет, система автоматически рассчитывает стоимость аренды пропорционально длительности сессии и добавляет запись в журнал затрат.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- ВКЛАДКА 5: СПРАВОЧНИКИ КАБИНЕТОВ И УСЛУГ   -->
+            <!-- ========================================== -->
+            <section id="tab-catalogs" class="tab-content hidden fade-in space-y-8">
+                
+                <!-- Раздел 1: Рабочие кабинеты (Модуль А.2) -->
+                <div class="space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-base font-bold text-slate-800">Рабочие кабинеты и коворкинги</h2>
+                                <span class="text-[11px] bg-sage-100 text-sage-800 px-2 py-0.5 rounded-full font-medium">Модуль А.2</span>
+                            </div>
+                            <p class="text-xs text-slate-500">Офлайн-точки приема, почасовые ставки аренды и оснащение для автоматического расчета затрат</p>
+                        </div>
+                        <button onclick="openOfficeModal()" class="flex items-center gap-2 bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xs transition-all">
+                            <i class="ph ph-plus text-sm"></i>
+                            <span>Добавить кабинет</span>
+                        </button>
+                    </div>
+
+                    <div id="offices-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Заполняется через JS -->
+                    </div>
+                </div>
+
+                <hr class="border-slate-200">
+
+                <!-- Раздел 2: Услуги и стоимость (Модуль А.3) -->
+                <div class="space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-base font-bold text-slate-800">Услуги и прайс-лист</h2>
+                                <span class="text-[11px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-medium">Модуль А.3</span>
+                            </div>
+                            <p class="text-xs text-slate-500">Тарифная сетка специалиста: индивидуальные, парные/семейные и групповые форматы</p>
+                        </div>
+                        <button onclick="openServiceModal()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xs transition-all">
+                            <i class="ph ph-plus text-sm"></i>
+                            <span>Добавить услугу</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase text-slate-400 bg-slate-50/50">
+                                        <th class="py-3.5 px-4">Название услуги</th>
+                                        <th class="py-3.5 px-4">Категория</th>
+                                        <th class="py-3.5 px-4">Доступный формат</th>
+                                        <th class="py-3.5 px-4">Длительность</th>
+                                        <th class="py-3.5 px-4 text-right">Стоимость (₽)</th>
+                                        <th class="py-3.5 px-4 text-right">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="services-table-body" class="divide-y divide-slate-100 text-xs">
+                                    <!-- Заполняется через JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- МОДАЛЬНЫЕ ОКНА И DRAWER-ПАНЕЛИ                                    -->
+    <!-- ================================================================= -->
+
+    <!-- 1. Модальное окно: Создание / Редактирование Сессии -->
+    <div id="modal-session" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-200 my-8 fade-in">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 id="modal-session-title" class="text-base font-bold text-slate-800">Запись на сессию</h3>
+                <button onclick="closeModal('modal-session')" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+
+            <form id="form-session" onsubmit="saveSession(event)" class="space-y-4 mt-4 text-xs">
+                <input type="hidden" id="session-id">
+
+                <!-- Выбор клиента и Услуги -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Клиент *</label>
+                        <select id="session-client" required onchange="onSessionClientChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-sage-500">
+                            <!-- JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Услуга *</label>
+                        <select id="session-service" required onchange="onSessionServiceChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-sage-500">
+                            <!-- JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Дата, Время, Длительность, Стоимость -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Дата *</label>
+                        <input type="date" id="session-date" required onchange="validateOfficeConflict()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-sage-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Время *</label>
+                        <input type="time" id="session-time" required onchange="validateOfficeConflict()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-sage-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Длит. (мин)</label>
+                        <input type="number" id="session-duration" required min="15" step="5" oninput="calculateSessionRentAndBalance()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-sage-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Стоимость (₽)</label>
+                        <input type="number" id="session-price" required min="0" step="100" oninput="calculateSessionRentAndBalance()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-800 focus:outline-none focus:border-sage-500">
+                    </div>
+                </div>
+
+                <!-- Формат работы и выбор кабинета для Офлайн -->
+                <div class="p-3.5 rounded-xl bg-warm-50 border border-slate-200/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-slate-700">Формат проведения:</span>
+                        <div class="inline-flex rounded-lg bg-white p-1 border border-slate-200">
+                            <button type="button" onclick="setSessionFormat('online')" id="btn-format-online" class="px-3 py-1 rounded-md text-xs font-medium bg-indigo-600 text-white transition-all">
+                                <i class="ph ph-video-camera mr-1"></i> Онлайн
+                            </button>
+                            <button type="button" onclick="setSessionFormat('offline')" id="btn-format-offline" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition-all">
+                                <i class="ph ph-buildings mr-1"></i> Офлайн (Кабинет)
+                            </button>
+                        </div>
+                        <input type="hidden" id="session-format" value="online">
+                    </div>
+
+                    <!-- Поле выбора кабинета (показывается только для Офлайн) -->
+                    <div id="session-office-block" class="hidden pt-2 border-t border-slate-200/60 space-y-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Рабочий кабинет (бронь) *</label>
+                                <select id="session-office" onchange="calculateSessionRentAndBalance(); validateOfficeConflict();" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-sage-500">
+                                    <!-- JS -->
+                                </select>
+                            </div>
+                            <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                                <div>
+                                    <span class="text-[11px] text-slate-400 block">Расчет аренды (в затраты):</span>
+                                    <span id="session-rent-preview" class="text-sm font-bold text-rose-600">0 ₽</span>
+                                </div>
+                                <i class="ph ph-key text-xl text-sage-600"></i>
+                            </div>
+                        </div>
+                        <div id="office-conflict-warning" class="hidden text-[11px] text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 flex items-center gap-1.5">
+                            <i class="ph ph-warning-circle text-sm"></i>
+                            <span>Внимание: Выбранный кабинет уже забронирован на это время!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Блок учета оплат и предоплат -->
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-slate-700">Статус оплаты и проведение:</span>
+                        <select id="session-status" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700">
+                            <option value="scheduled">📅 Запланирована</option>
+                            <option value="completed">✅ Проведена</option>
+                            <option value="cancelled">❌ Отменена</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-slate-600 mb-1">Статус оплаты</label>
+                            <select id="session-payment-status" onchange="onPaymentStatusChange()" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium">
+                                <option value="unpaid">🔴 Не оплачено</option>
+                                <option value="prepaid">🟡 Внесена предоплата</option>
+                                <option value="paid">🟢 Оплачено полностью</option>
+                                <option value="refund">⚪ Возврат средств</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 mb-1">Внесено / Предоплата (₽)</label>
+                            <input type="number" id="session-prepaid-amount" min="0" step="100" oninput="updateRemainingBalance()" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 mb-1">Способ оплаты</label>
+                            <select id="session-payment-method" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800">
+                                <option value="transfer">Перевод на карту / СБП</option>
+                                <option value="acquiring">Интернет-эквайринг</option>
+                                <option value="cash">Наличные</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+                        <span class="text-slate-500">Остаток к доплате от клиента:</span>
+                        <span id="session-remaining-balance" class="font-bold text-amber-600">0 ₽</span>
+                    </div>
+                </div>
+
+                <!-- Заметки к сессии -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Краткие заметки к сессии (тема, динамика, домашнее задание)</label>
+                    <textarea id="session-notes" rows="2" placeholder="Запрос на встречу или краткое резюме..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-sage-500"></textarea>
+                </div>
+
+                <!-- Кнопки сохранения / удаления -->
+                <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <button type="button" id="btn-delete-session" onclick="deleteSession()" class="hidden text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-xl font-medium transition-all">
+                        <i class="ph ph-trash mr-1"></i> Удалить запись
+                    </button>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button type="button" onclick="closeModal('modal-session')" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">Отмена</button>
+                        <button type="submit" class="px-5 py-2 rounded-xl bg-sage-600 hover:bg-sage-700 text-white font-medium shadow-xs">Сохранить сессию</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Детальная карточка клиента (Drawer справа) -->
+    <div id="drawer-client-backdrop" onclick="closeClientDrawer()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 hidden"></div>
+    <div id="drawer-client" class="fixed inset-y-0 right-0 w-full max-w-lg bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-warm-50">
+            <div class="flex items-center gap-3">
+                <div id="drawer-client-avatar" class="w-11 h-11 rounded-2xl bg-sage-600 text-white font-bold text-base flex items-center justify-center">
+                    ИИ
+                </div>
+                <div>
+                    <h3 id="drawer-client-name" class="font-bold text-slate-800 text-base">Имя Клиента</h3>
+                    <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                        <span id="drawer-client-phone">+7 (999) 000-00-00</span>
+                        <span>•</span>
+                        <span id="drawer-client-messenger" class="text-indigo-600 font-medium">@username</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-1">
+                <button id="drawer-btn-edit" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-xl" title="Редактировать профиль">
+                    <i class="ph ph-pencil-simple text-lg"></i>
+                </button>
+                <button onclick="closeClientDrawer()" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-xl">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-6 text-xs">
+            <!-- Статистика клиента -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <span class="text-slate-400 block">Проведено сессий</span>
+                    <span id="drawer-client-sessions-count" class="text-base font-bold text-slate-800 mt-0.5 block">0</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <span class="text-slate-400 block">Оплачено (LTV)</span>
+                    <span id="drawer-client-ltv" class="text-base font-bold text-emerald-600 mt-0.5 block">0 ₽</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <span class="text-slate-400 block">Баланс / Долг</span>
+                    <span id="drawer-client-debt" class="text-base font-bold text-slate-800 mt-0.5 block">0 ₽</span>
+                </div>
+            </div>
+
+            <!-- Защищенный блок: Анамнез и заметки безопасности -->
+            <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-amber-900 flex items-center gap-1.5">
+                        <i class="ph ph-shield-check text-base text-amber-700"></i>
+                        Анамнез, запрос и заметки безопасности
+                    </span>
+                    <button onclick="toggleBlurNotes()" class="text-[11px] text-amber-700 hover:underline flex items-center gap-1">
+                        <i class="ph ph-eye"></i> Показать/скрыть
+                    </button>
+                </div>
+                <p id="drawer-client-notes" class="text-slate-700 leading-relaxed blur-notes cursor-pointer" onclick="this.classList.toggle('revealed')" title="Нажмите или наведите курсор, чтобы прочитать">
+                    Заметки отсутствуют.
+                </p>
+            </div>
+
+            <!-- История посещений и оплат -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-bold text-slate-800 uppercase tracking-wider text-[11px]">История посещений и оплат</h4>
+                    <button id="drawer-btn-new-session" class="text-xs font-medium text-sage-600 hover:text-sage-800 flex items-center gap-1">
+                        <i class="ph ph-plus-circle"></i> Записать на сессию
+                    </button>
+                </div>
+                <div id="drawer-client-history" class="space-y-2.5">
+                    <!-- Заполняется JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Модальное окно: Создание / Редактирование Клиента -->
+    <div id="modal-client" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 fade-in">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 id="modal-client-title" class="text-base font-bold text-slate-800">Профиль клиента</h3>
+                <button onclick="closeModal('modal-client')" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <form id="form-client" onsubmit="saveClient(event)" class="space-y-4 mt-4 text-xs">
+                <input type="hidden" id="client-id">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">ФИО клиента *</label>
+                    <input type="text" id="client-name" required placeholder="Например: Смирнова Елена Викторовна" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-sage-500">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Телефон *</label>
+                        <input type="text" id="client-phone" required placeholder="+7 (999) 123-45-67" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-sage-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Мессенджер (TG / WA)</label>
+                        <input type="text" id="client-messenger" placeholder="Telegram: @elena_sm" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-sage-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Формат по умолчанию</label>
+                        <select id="client-format" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                            <option value="online">Онлайн (Видеосвязь)</option>
+                            <option value="offline">Офлайн (В кабинете)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Статус клиента</label>
+                        <select id="client-status" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                            <option value="active">Активный</option>
+                            <option value="archived">Архив (терапия завершена)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Примечания (Анамнез, запрос, заметки безопасности)</label>
+                    <textarea id="client-notes" rows="3" placeholder="Первичный запрос, особенности контракта, медицинский контекст..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-sage-500"></textarea>
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <button type="button" id="btn-delete-client" onclick="deleteClient()" class="hidden text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-xl font-medium">Удалить</button>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button type="button" onclick="closeModal('modal-client')" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600">Отмена</button>
+                        <button type="submit" class="px-5 py-2 rounded-xl bg-sage-600 hover:bg-sage-700 text-white font-medium">Сохранить клиента</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Модальное окно: Добавление Расхода / Налога -->
+    <div id="modal-expense" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 fade-in">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 id="modal-expense-title" class="text-base font-bold text-slate-800">Внести расход</h3>
+                <button onclick="closeModal('modal-expense')" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <form id="form-expense" onsubmit="saveExpense(event)" class="space-y-4 mt-4 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Дата расхода *</label>
+                        <input type="date" id="expense-date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Сумма (₽) *</label>
+                        <input type="number" id="expense-amount" required min="1" step="10" placeholder="5000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-bold text-slate-800">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Статья затрат *</label>
+                    <select id="expense-category" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                        <!-- JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Комментарий / Назначение</label>
+                    <input type="text" id="expense-comment" placeholder="Например: Налог НПД за прошлый месяц / Оплата Zoom" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modal-expense')" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600">Отмена</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-sage-600 hover:bg-sage-700 text-white font-medium">Сохранить расход</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. Модальное окно: Новая статья затрат -->
+    <div id="modal-expense-category" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-200 fade-in">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-800">Статья затрат</h3>
+                <button onclick="closeModal('modal-expense-category')" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <form onsubmit="saveExpenseCategory(event)" class="space-y-4 mt-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Название статьи *</label>
+                    <input type="text" id="exp-cat-name" required placeholder="Например: Повышение квалификации" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Тип расходов</label>
+                    <select id="exp-cat-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                        <option value="variable">Переменные</option>
+                        <option value="fixed">Постоянные</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modal-expense-category')" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600">Отмена</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-sage-600 hover:bg-sage-700 text-white font-medium">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6. Модальное окно: Рабочий кабинет (Модуль А.2) -->
+    <div id="modal-office" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 fade-in">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 id="modal-office-title" class="text-base font-bold text-slate-800">Рабочий кабинет</h3>
+                <button onclick="closeModal('modal-office')" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <form onsubmit="saveOffice(event)" class="space-y-4 mt-4 text-xs">
+                <input type="hidden" id="office-id">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Название / Номер кабинета *</label>
+                    <input type="text" id="office-name" required placeholder="Например: Кабинет «Шалфей» №4" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Адрес локации *</label>
+                    <input type="text" id="office-address" required placeholder="ул. Большая Никитская, 22, 3 этаж" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Стоимость аренды за час (₽/час) *</label>
+                    <input type="number" id="office-rate" required min="0" step="50" placeholder="900" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-bold text-slate-800">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Доступное оборудование (через запятую)</label>
+                    <input type="text" id="office-equipment" placeholder="2 кресла, диван для пар, флипчарт, песочница" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modal-office')" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600">Отмена</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-sage-600 hover:bg-sage-700 text-white font-medium">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 7. Модальное окно: Услуга (Модуль А.3) -->
+    <div id="modal-service" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 fade-in">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 id="modal-service-title" class="text-base font-bold text-slate-800">Параметры услуги</h3>
+                <button onclick="closeModal('modal-service')" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <form onsubmit="saveService(event)" class="space-y-4 mt-4 text-xs">
+                <input type="hidden" id="service-id">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Название услуги *</label>
+                    <input type="text" id="service-name" required placeholder="Индивидуальная сессия онлайн" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Категория</label>
+                        <select id="service-category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                            <option value="Индивидуальная">Индивидуальная</option>
+                            <option value="Парная / Семейная">Парная / Семейная</option>
+                            <option value="Групповая">Групповая</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Формат</label>
+                        <select id="service-format" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                            <option value="online">Онлайн</option>
+                            <option value="offline">Офлайн</option>
+                            <option value="any">Онлайн / Офлайн</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Длительность (мин) *</label>
+                        <input type="number" id="service-duration" required min="15" step="5" value="50" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Стоимость (₽) *</label>
+                        <input type="number" id="service-price" required min="0" step="100" value="5000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-bold text-slate-800">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modal-service')" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600">Отмена</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-sage-600 hover:bg-sage-700 text-white font-medium">Сохранить услугу</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 8. Модальное окно подтверждения сброса демо-данных -->
+    <div id="modal-reset" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-200 text-center fade-in">
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
+                <i class="ph ph-arrows-counter-clockwise text-2xl"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-800">Сбросить данные к демо-версии?</h3>
+            <p class="text-xs text-slate-500 mt-1">Все внесенные вами изменения будут заменены исходным демонстрационным набором клиентов, расписания и финансов.</p>
+            <div class="flex items-center justify-center gap-2 mt-5">
+                <button onclick="closeModal('modal-reset')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-600">Отмена</button>
+                <button onclick="confirmResetDemoData()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium">Да, сбросить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Всплывающее уведомление (Toast) -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2.5 z-50 transform translate-y-20 opacity-0 transition-all duration-300">
+        <i class="ph ph-check-circle text-emerald-400 text-lg"></i>
+        <span id="toast-message">Изменения сохранены</span>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT ЛОГИКА ПРИЛОЖЕНИЯ                                      -->
+    <!-- ================================================================= -->
+    <script>
+        const STORAGE_KEY = 'psy_erp_state_v1';
+
+        // Глобальное состояние приложения
+        let state = {
+            clients: [],
+            offices: [],
+            services: [],
+            expenseCategories: [],
+            sessions: [],
+            expenses: []
+        };
+
+        // Состояние UI
+        let currentTab = 'dashboard';
+        let analyticsPeriod = 'month'; // week, month, quarter, year, all
+        let calendarView = 'week'; // day, week, month, list
+        let calendarCursorDate = new Date(); // Опорная дата в календаре
+
+        // Экземпляры графиков Chart.js
+        let chartFormatInstance = null;
+        let chartCategoryInstance = null;
+        let chartExpensesInstance = null;
+
+        // Вспомогательные функции работы с датами относительно текущего дня
+        function getRelativeDateStr(offsetDays) {
+            const d = new Date();
+            d.setDate(d.getDate() + offsetDays);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function formatRub(amount) {
+            return new Intl.NumberFormat('ru-RU').format(Math.round(amount || 0)) + ' ₽';
+        }
+
+        function formatDateHuman(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const date = new Date(parts[0], parts[1] - 1, parts[2]);
+            return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2800);
+        }
+
+        // Генерация реалистичных демо-данных
+        function generateInitialDemoData() {
+            const offices = [
+                {
+                    id: 'off-1',
+                    name: 'Кабинет «Шалфей» №12',
+                    address: 'м. Чистые пруды, Потаповский пер., 5с2',
+                    hourlyRate: 900,
+                    equipment: '2 глубоких кресла, кушетка, флипчарт, салфетки, вода'
+                },
+                {
+                    id: 'off-2',
+                    name: 'Пространство «Тишина» (Зал Б)',
+                    address: 'м. Парк Культуры, Остоженка, 14',
+                    hourlyRate: 1300,
+                    equipment: 'Диван для пар, 10 стульев для группы, проектор, парковка'
+                },
+                {
+                    id: 'off-3',
+                    name: 'Детский и арт-кабинет «Песок»',
+                    address: 'м. Таганская, ул. Гончарная, 26',
+                    hourlyRate: 800,
+                    equipment: 'Юнгианская песочница, МАК-карты, арт-материалы'
+                }
+            ];
+
+            const services = [
+                { id: 'srv-1', name: 'Индивидуальная сессия онлайн (50 мин)', category: 'Индивидуальная', duration: 50, price: 5500, format: 'online' },
+                { id: 'srv-2', name: 'Индивидуальная консультация в кабинете (55 мин)', category: 'Индивидуальная', duration: 55, price: 6500, format: 'offline' },
+                { id: 'srv-3', name: 'Парная / Семейная терапия (90 мин)', category: 'Парная / Семейная', duration: 90, price: 9500, format: 'any' },
+                { id: 'srv-4', name: 'Терапевтическая группа (120 мин)', category: 'Групповая', duration: 120, price: 4000, format: 'offline' },
+                { id: 'srv-5', name: 'Первичная диагностическая встреча (50 мин)', category: 'Индивидуальная', duration: 50, price: 4500, format: 'any' }
+            ];
+
+            const expenseCategories = [
+                { id: 'cat-rent', name: 'Аренда кабинетов', type: 'variable', system: true },
+                { id: 'cat-tax', name: 'Налоги и взносы', type: 'variable', system: true },
+                { id: 'cat-sup', name: 'Супервизия и личная терапия', type: 'fixed', system: false },
+                { id: 'cat-mkt', name: 'Маркетинг и агрегаторы', type: 'variable', system: false },
+                { id: 'cat-soft', name: 'Софт и подписки (Zoom, B17, CRM)', type: 'fixed', system: false }
+            ];
+
+            const clients = [
+                {
+                    id: 'cli-1',
+                    name: 'Соколова Анна Дмитриевна',
+                    phone: '+7 (916) 450-12-88',
+                    messenger: 'TG: @anna_sokolova',
+                    defaultFormat: 'online',
+                    status: 'active',
+                    notes: 'Запрос: профессиональное выгорание, перфекционизм, тревожность при смене работы. В терапии 3 месяца, стабильная динамика. Медикаментозная поддержка не требуется.'
+                },
+                {
+                    id: 'cli-2',
+                    name: 'Морозов Игорь и Морозова Юлия',
+                    phone: '+7 (925) 881-34-19',
+                    messenger: 'WA: +79258813419',
+                    defaultFormat: 'offline',
+                    status: 'active',
+                    notes: 'Семейная пара (в браке 7 лет). Запрос: кризис в коммуникации после рождения ребенка, распределение ролей. Предпочитают офлайн по средам или пятницам в зале на Остоженке.'
+                },
+                {
+                    id: 'cli-3',
+                    name: 'Волков Денис Сергеевич',
+                    phone: '+7 (903) 712-90-05',
+                    messenger: 'TG: @denis_volkov_it',
+                    defaultFormat: 'offline',
+                    status: 'active',
+                    notes: 'Запрос: сложности в построении долгосрочных отношений, избегающий тип привязанности. Важно: четкий сеттинг, предупреждает об отменах заранее.'
+                },
+                {
+                    id: 'cli-4',
+                    name: 'Лебедева Ксения Артемовна',
+                    phone: '+7 (999) 214-56-32',
+                    messenger: 'TG: @ksenia_leb',
+                    defaultFormat: 'online',
+                    status: 'active',
+                    notes: 'Живет в другом часовом поясе (+2 часа к МСК). Запрос: сепарация от родителей, личные границы, самооценка.'
+                },
+                {
+                    id: 'cli-5',
+                    name: 'Белов Александр Николаевич',
+                    phone: '+7 (915) 339-01-44',
+                    messenger: 'TG: @alex_belov',
+                    defaultFormat: 'offline',
+                    status: 'active',
+                    notes: 'Топ-менеджер, высокий уровень стресса, нарушения сна. Наблюдается параллельно у сомнолога. Работаем в КПТ-подходе.'
+                },
+                {
+                    id: 'cli-6',
+                    name: 'Громова Вероника Павловна',
+                    phone: '+7 (926) 605-77-12',
+                    messenger: 'WA: +79266057712',
+                    defaultFormat: 'online',
+                    status: 'archived',
+                    notes: 'Краткосрочное консультирование (8 встреч) успешно завершено в прошлом месяце. Запрос по адаптации к переезду решен.'
+                }
+            ];
+
+            // Сессии за прошлые дни, сегодня и будущие дни
+            const sessions = [
+                {
+                    id: 'ses-1', clientId: 'cli-1', serviceId: 'srv-1',
+                    date: getRelativeDateStr(-12), time: '11:00', duration: 50, price: 5500,
+                    format: 'online', officeId: null,
+                    paymentStatus: 'paid', prepaidAmount: 5500, paymentMethod: 'transfer',
+                    status: 'completed', notes: 'Разбор когнитивных искажений («все или ничего»). Дано упражнение на ведение дневника эмоций.'
+                },
+                {
+                    id: 'ses-2', clientId: 'cli-2', serviceId: 'srv-3',
+                    date: getRelativeDateStr(-10), time: '18:00', duration: 90, price: 9500,
+                    format: 'offline', officeId: 'off-2',
+                    paymentStatus: 'paid', prepaidAmount: 9500, paymentMethod: 'transfer',
+                    status: 'completed', notes: 'Выявление цикла эскалации конфликта. Оба партнера активно включены.'
+                },
+                {
+                    id: 'ses-3', clientId: 'cli-3', serviceId: 'srv-2',
+                    date: getRelativeDateStr(-7), time: '15:00', duration: 55, price: 6500,
+                    format: 'offline', officeId: 'off-1',
+                    paymentStatus: 'paid', prepaidAmount: 6500, paymentMethod: 'acquiring',
+                    status: 'completed', notes: 'Работа с уязвимостью и страхом отвержения.'
+                },
+                {
+                    id: 'ses-4', clientId: 'cli-4', serviceId: 'srv-1',
+                    date: getRelativeDateStr(-5), time: '10:00', duration: 50, price: 5500,
+                    format: 'online', officeId: null,
+                    paymentStatus: 'paid', prepaidAmount: 5500, paymentMethod: 'acquiring',
+                    status: 'completed', notes: 'Обсуждение границ в телефонных разговорах с мамой.'
+                },
+                {
+                    id: 'ses-5', clientId: 'cli-1', serviceId: 'srv-1',
+                    date: getRelativeDateStr(-4), time: '11:00', duration: 50, price: 5500,
+                    format: 'online', officeId: null,
+                    paymentStatus: 'paid', prepaidAmount: 5500, paymentMethod: 'transfer',
+                    status: 'completed', notes: 'Положительная динамика: удалось делегировать часть задач на работе.'
+                },
+                {
+                    id: 'ses-6', clientId: 'cli-5', serviceId: 'srv-2',
+                    date: getRelativeDateStr(-2), time: '19:00', duration: 55, price: 6500,
+                    format: 'offline', officeId: 'off-1',
+                    paymentStatus: 'paid', prepaidAmount: 6500, paymentMethod: 'cash',
+                    status: 'completed', notes: 'Гигиена сна и вечерние ритуалы декомпрессии.'
+                },
+                // Сегодняшние сессии
+                {
+                    id: 'ses-7', clientId: 'cli-3', serviceId: 'srv-2',
+                    date: getRelativeDateStr(0), time: '13:00', duration: 55, price: 6500,
+                    format: 'offline', officeId: 'off-1',
+                    paymentStatus: 'paid', prepaidAmount: 6500, paymentMethod: 'transfer',
+                    status: 'completed', notes: 'Проведена сегодня. Продолжение темы близости.'
+                },
+                {
+                    id: 'ses-8', clientId: 'cli-4', serviceId: 'srv-1',
+                    date: getRelativeDateStr(0), time: '16:30', duration: 50, price: 5500,
+                    format: 'online', officeId: null,
+                    paymentStatus: 'prepaid', prepaidAmount: 2500, paymentMethod: 'transfer',
+                    status: 'scheduled', notes: 'Внесена предоплата 2500 ₽ для фиксации слота.'
+                },
+                // Будущие сессии на этой неделе
+                {
+                    id: 'ses-9', clientId: 'cli-2', serviceId: 'srv-3',
+                    date: getRelativeDateStr(1), time: '18:30', duration: 90, price: 9500,
+                    format: 'offline', officeId: 'off-2',
+                    paymentStatus: 'prepaid', prepaidAmount: 4500, paymentMethod: 'transfer',
+                    status: 'scheduled', notes: 'Парная сессия, предоплата получена.'
+                },
+                {
+                    id: 'ses-10', clientId: 'cli-1', serviceId: 'srv-1',
+                    date: getRelativeDateStr(2), time: '11:00', duration: 50, price: 5500,
+                    format: 'online', officeId: null,
+                    paymentStatus: 'unpaid', prepaidAmount: 0, paymentMethod: 'transfer',
+                    status: 'scheduled', notes: 'Еженедельная сессия.'
+                },
+                {
+                    id: 'ses-11', clientId: 'cli-5', serviceId: 'srv-2',
+                    date: getRelativeDateStr(3), time: '19:00', duration: 55, price: 6500,
+                    format: 'offline', officeId: 'off-1',
+                    paymentStatus: 'unpaid', prepaidAmount: 0, paymentMethod: 'cash',
+                    status: 'scheduled', notes: 'Оплата наличными на месте.'
+                },
+                // Прошлый месяц (для квартальной и годовой аналитики)
+                {
+                    id: 'ses-12', clientId: 'cli-6', serviceId: 'srv-5',
+                    date: getRelativeDateStr(-35), time: '14:00', duration: 50, price: 4500,
+                    format: 'online', officeId: null,
+                    paymentStatus: 'paid', prepaidAmount: 4500, paymentMethod: 'acquiring',
+                    status: 'completed', notes: 'Завершающая встреча цикла.'
+                },
+                {
+                    id: 'ses-13', clientId: 'cli-2', serviceId: 'srv-3',
+                    date: getRelativeDateStr(-32), time: '18:00', duration: 90, price: 9500,
+                    format: 'offline', officeId: 'off-2',
+                    paymentStatus: 'paid', prepaidAmount: 9500, paymentMethod: 'transfer',
+                    status: 'completed', notes: 'Семейная консультация.'
+                }
+            ];
+
+            // Ручные затраты (включая налоги, супервизию, маркетинг)
+            const expenses = [
+                { id: 'exp-1', date: getRelativeDateStr(-14), categoryId: 'cat-sup', amount: 6000, comment: 'Индивидуальная супервизия у сертифицированного супервизора' },
+                { id: 'exp-2', date: getRelativeDateStr(-9), categoryId: 'cat-tax', amount: 3450, comment: 'Оплата налога НПД / УСН (вручную за прошлый период)' },
+                { id: 'exp-3', date: getRelativeDateStr(-6), categoryId: 'cat-mkt', amount: 4200, comment: 'Продвижение анкеты на агрегаторе и таргет' },
+                { id: 'exp-4', date: getRelativeDateStr(-3), categoryId: 'cat-soft', amount: 1890, comment: 'Подписка Zoom Pro + облачное хранилище' },
+                { id: 'exp-5', date: getRelativeDateStr(-34), categoryId: 'cat-sup', amount: 6000, comment: 'Плановая супервизия (прошлый месяц)' }
+            ];
+
+            return { clients, offices, services, expenseCategories, sessions, expenses };
+        }
+
+        // Загрузка и сохранение состояния
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    state = JSON.parse(raw);
+                } else {
+                    state = generateInitialDemoData();
+                    saveState();
+                }
+            } catch (e) {
+                console.error('Ошибка чтения localStorage:', e);
+                state = generateInitialDemoData();
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                updateBadgesAndSidebar();
+            } catch (e) {
+                console.error('Ошибка записи в localStorage:', e);
+            }
+        }
+
+        // Расчет стоимости аренды кабинета для конкретной сессии
+        function getSessionRentCost(session) {
+            if (session.format !== 'offline' || !session.officeId || session.status === 'cancelled') return 0;
+            const office = state.offices.find(o => o.id === session.officeId);
+            if (!office) return 0;
+            // Пропорционально часовой ставке (с округлением до 0.5 часа в большую сторону или точно по минутам)
+            const hours = (Number(session.duration) || 50) / 60;
+            return Math.round(office.hourlyRate * hours);
+        }
+
+        // Фактически полученная выручка с сессии
+        function getSessionActualRevenue(session) {
+            if (session.status === 'cancelled' || session.paymentStatus === 'refund' || session.paymentStatus === 'unpaid') {
+                return 0;
+            }
+            if (session.paymentStatus === 'paid') {
+                return Number(session.price) || 0;
+            }
+            if (session.paymentStatus === 'prepaid') {
+                return Number(session.prepaidAmount) || 0;
+            }
+            return 0;
+        }
+
+        // Остаток к доплате по сессии (дебиторка)
+        function getSessionReceivable(session) {
+            if (session.status === 'cancelled' || session.paymentStatus === 'paid' || session.paymentStatus === 'refund') {
+                return 0;
+            }
+            const price = Number(session.price) || 0;
+            const prepaid = session.paymentStatus === 'prepaid' ? (Number(session.prepaidAmount) || 0) : 0;
+            return Math.max(0, price - prepaid);
+        }
+
+        // Проверка вхождения даты YYYY-MM-DD в выбранный фильтр периода
+        function isDateInPeriod(dateStr, period) {
+            if (period === 'all') return true;
+            const parts = dateStr.split('-');
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            if (period === 'week') {
+                // Текущая неделя (Пн - Вс)
+                const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1;
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - dayOfWeek);
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                return d >= startOfWeek && d <= endOfWeek;
+            }
+            if (period === 'month') {
+                return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+            }
+            if (period === 'quarter') {
+                const threeMonthsAgo = new Date(today);
+                threeMonthsAgo.setDate(today.getDate() - 90);
+                const futureLimit = new Date(today);
+                futureLimit.setDate(today.getDate() + 30);
+                return d >= threeMonthsAgo && d <= futureLimit;
+            }
+            if (period === 'year') {
+                return d.getFullYear() === today.getFullYear();
+            }
+            return true;
+        }
+
+        // Переключение вкладок
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            // Подсветка кнопки в сайдбаре
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = 'nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all';
+            });
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = 'nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all bg-sage-600 text-white shadow-sm';
+            }
+
+            // Заголовки страницы
+            const titles = {
+                dashboard: ['Финансовая и управленческая аналитика', 'Мониторинг ключевых показателей практики, онлайн и офлайн сессий'],
+                calendar: ['Интерактивный календарь и запись клиентов', 'Управление расписанием, бронирование кабинетов и фиксация предоплат'],
+                clients: ['База клиентов (Модуль А.1)', 'Профили клиентов, защищенные заметки безопасности и история посещений'],
+                finances: ['Финансы, затраты и налоги (Модуль А.4)', 'Журнал постоянных и переменных расходов, ручной ввод налогов и авто-аренда'],
+                catalogs: ['Справочники: Кабинеты и Услуги (Модули А.2 и А.3)', 'Настройка офлайн-точек приема и тарифной сетки услуг']
+            };
+            document.getElementById('page-title').textContent = titles[tabId][0];
+            document.getElementById('page-subtitle').textContent = titles[tabId][1];
+
+            refreshCurrentTab();
+        }
+
+        function refreshCurrentTab() {
+            updateBadgesAndSidebar();
+            if (currentTab === 'dashboard') renderDashboard();
+            if (currentTab === 'calendar') renderCalendar();
+            if (currentTab === 'clients') renderClients();
+            if (currentTab === 'finances') renderFinances();
+            if (currentTab === 'catalogs') renderCatalogs();
+        }
+
+        function toggleMobileSidebar() {
+            const sb = document.getElementById('mobile-sidebar');
+            const bd = document.getElementById('mobile-sidebar-backdrop');
+            sb.classList.toggle('-translate-x-full');
+            bd.classList.toggle('hidden');
+        }
+
+        // Обновление счетчиков в боковом меню
+        function updateBadgesAndSidebar() {
+            const todayStr = getRelativeDateStr(0);
+            const todaySessions = state.sessions.filter(s => s.date === todayStr && s.status !== 'cancelled').length;
+            const activeClients = state.clients.filter(c => c.status === 'active').length;
+
+            document.getElementById('badge-today-sessions').textContent = todaySessions;
+            document.getElementById('badge-active-clients').textContent = activeClients;
+
+            // Расчет чистой прибыли за текущий месяц для виджета в сайдбаре
+            const monthSessions = state.sessions.filter(s => isDateInPeriod(s.date, 'month'));
+            const monthRevenue = monthSessions.reduce((acc, s) => acc + getSessionActualRevenue(s), 0);
+            const monthUnpaid = monthSessions.reduce((acc, s) => acc + getSessionReceivable(s), 0);
+            const monthAutoRent = monthSessions.reduce((acc, s) => acc + getSessionRentCost(s), 0);
+            const monthManualExp = state.expenses
+                .filter(e => isDateInPeriod(e.date, 'month'))
+                .reduce((acc, e) => acc + Number(e.amount || 0), 0);
+
+            const netProfit = monthRevenue - (monthAutoRent + monthManualExp);
+            document.getElementById('sidebar-net-profit').textContent = formatRub(netProfit);
+            document.getElementById('sidebar-unpaid').textContent = formatRub(monthUnpaid);
+        }
+
+        // =================================================================
+        // МОДУЛЬ В: ДАШБОРД И АНАЛИТИКА
+        // =================================================================
+        function setAnalyticsPeriod(period) {
+            analyticsPeriod = period;
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.className = 'period-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition-all';
+            });
+            document.getElementById(`period-${period}`).className = 'period-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-900 shadow-xs transition-all';
+
+            const labels = {
+                week: 'Данные за текущую неделю',
+                month: 'Данные за текущий календарный месяц',
+                quarter: 'Данные за последние 90 дней + 30 дней вперед',
+                year: 'Данные за текущий год',
+                all: 'Данные за все время ведения практики'
+            };
+            document.getElementById('analytics-date-range-label').textContent = labels[period];
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            const periodSessions = state.sessions.filter(s => isDateInPeriod(s.date, analyticsPeriod) && s.status !== 'cancelled');
+            const periodManualExpenses = state.expenses.filter(e => isDateInPeriod(e.date, analyticsPeriod));
+
+            // 1. Выручка и Дебиторка
+            let grossRevenue = 0;
+            let receivables = 0;
+            let onlineRevenue = 0;
+            let offlineRevenue = 0;
+            let autoRentTotal = 0;
+            let totalHoursWorked = 0;
+
+            periodSessions.forEach(s => {
+                const rev = getSessionActualRevenue(s);
+                const rec = getSessionReceivable(s);
+                const rent = getSessionRentCost(s);
+
+                grossRevenue += rev;
+                receivables += rec;
+                autoRentTotal += rent;
+                totalHoursWorked += (Number(s.duration) || 50) / 60;
+
+                if (s.format === 'online') onlineRevenue += rev;
+                else offlineRevenue += rev;
+            });
+
+            // 2. Расходы (ручные + авто-аренда)
+            const manualExpensesSum = periodManualExpenses.reduce((acc, e) => acc + Number(e.amount || 0), 0);
+            const taxSum = periodManualExpenses
+                .filter(e => e.categoryId === 'cat-tax')
+                .reduce((acc, e) => acc + Number(e.amount || 0), 0);
+
+            const totalExpenses = manualExpensesSum + autoRentTotal;
+            const netProfit = grossRevenue - totalExpenses;
+            const margin = grossRevenue > 0 ? Math.round((netProfit / grossRevenue) * 100) : 0;
+
+            const onlineSessionsCount = periodSessions.filter(s => s.format === 'online').length;
+            const offlineSessionsCount = periodSessions.filter(s => s.format === 'offline').length;
+            const hourlyRate = totalHoursWorked > 0 ? Math.round(netProfit / totalHoursWorked) : 0;
+
+            // Обновление KPI карточек
+            document.getElementById('kpi-revenue').textContent = formatRub(grossRevenue);
+            document.getElementById('kpi-receivables').textContent = formatRub(receivables);
+            document.getElementById('kpi-expenses').textContent = formatRub(totalExpenses);
+            document.getElementById('kpi-expenses-sub').textContent = `${formatRub(autoRentTotal)} / ${formatRub(taxSum)}`;
+            document.getElementById('kpi-profit').textContent = formatRub(netProfit);
+            document.getElementById('kpi-margin').textContent = `${margin}%`;
+            document.getElementById('kpi-sessions-total').textContent = periodSessions.length;
+            document.getElementById('kpi-sessions-split').textContent = `(${onlineSessionsCount} онл / ${offlineSessionsCount} офл)`;
+            document.getElementById('kpi-hourly-rate').textContent = `${formatRub(hourlyRate)}/ч`;
+
+            document.getElementById('stat-rev-online').textContent = formatRub(onlineRevenue);
+            document.getElementById('stat-rev-offline').textContent = formatRub(offlineRevenue);
+
+            // 3. Отрисовка графиков
+            renderDashboardCharts(onlineRevenue, offlineRevenue, periodSessions, periodManualExpenses, autoRentTotal);
+
+            // 4. Клиентская аналитика и удержание
+            renderClientDynamics(periodSessions);
+
+            // 5. Загрузка кабинетов
+            renderOfficeUtilization(periodSessions);
+        }
+
+        function renderDashboardCharts(onlineRev, offlineRev, periodSessions, periodManualExpenses, autoRentTotal) {
+            // График 1А: Онлайн vs Офлайн
+            const ctxFormat = document.getElementById('chartRevenueFormat').getContext('2d');
+            if (chartFormatInstance) chartFormatInstance.destroy();
+            chartFormatInstance = new Chart(ctxFormat, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Онлайн-сессии', 'Офлайн (в кабинете)'],
+                    datasets: [{
+                        data: [onlineRev || 0, offlineRev || 0],
+                        backgroundColor: ['#6366f1', '#5c826e'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, family: 'Inter' } } },
+                        title: { display: true, text: 'По формату (₽)', font: { size: 12, family: 'Inter', weight: '600' }, color: '#475569' }
+                    }
+                }
+            });
+
+            // График 1Б: По категориям услуг
+            const catMap = { 'Индивидуальная': 0, 'Парная / Семейная': 0, 'Групповая': 0 };
+            periodSessions.forEach(s => {
+                const srv = state.services.find(x => x.id === s.serviceId);
+                const cat = srv ? srv.category : 'Индивидуальная';
+                catMap[cat] = (catMap[cat] || 0) + getSessionActualRevenue(s);
+            });
+
+            const ctxCat = document.getElementById('chartRevenueCategory').getContext('2d');
+            if (chartCategoryInstance) chartCategoryInstance.destroy();
+            chartCategoryInstance = new Chart(ctxCat, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(catMap),
+                    datasets: [{
+                        label: 'Выручка (₽)',
+                        data: Object.values(catMap),
+                        backgroundColor: ['#5c826e', '#818cf8', '#f59e0b'],
+                        borderRadius: 8,
+                        barThickness: 28
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'По типам услуг (₽)', font: { size: 12, family: 'Inter', weight: '600' }, color: '#475569' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+
+            // График 2: Структура расходов
+            const expByCategory = {};
+            state.expenseCategories.forEach(c => { expByCategory[c.name] = 0; });
+            
+            // Добавляем авто-аренду
+            const rentCat = state.expenseCategories.find(c => c.id === 'cat-rent');
+            const rentCatName = rentCat ? rentCat.name : 'Аренда кабинетов';
+            expByCategory[rentCatName] = (expByCategory[rentCatName] || 0) + autoRentTotal;
+
+            // Добавляем ручные расходы
+            periodManualExpenses.forEach(e => {
+                const cat = state.expenseCategories.find(c => c.id === e.categoryId);
+                const name = cat ? cat.name : 'Прочее';
+                expByCategory[name] = (expByCategory[name] || 0) + Number(e.amount || 0);
+            });
+
+            const expLabels = Object.keys(expByCategory).filter(k => expByCategory[k] > 0);
+            const expValues = expLabels.map(k => expByCategory[k]);
+            const palette = ['#f43f5e', '#f59e0b', '#6366f1', '#10b981', '#64748b', '#8b5cf6'];
+
+            const ctxExp = document.getElementById('chartExpenses').getContext('2d');
+            if (chartExpensesInstance) chartExpensesInstance.destroy();
+            chartExpensesInstance = new Chart(ctxExp, {
+                type: 'doughnut',
+                data: {
+                    labels: expLabels.length ? expLabels : ['Нет затрат'],
+                    datasets: [{
+                        data: expValues.length ? expValues : [1],
+                        backgroundColor: expValues.length ? palette : ['#e2e8f0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Список детализации затрат под графиком
+            const listEl = document.getElementById('expenses-breakdown-list');
+            if (expLabels.length === 0) {
+                listEl.innerHTML = `<div class="text-slate-400 text-center py-2">За выбранный период затрат не зафиксировано</div>`;
+            } else {
+                listEl.innerHTML = expLabels.map((label, idx) => `
+                    <div class="flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-slate-600 truncate">
+                            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${palette[idx % palette.length]}"></span>
+                            <span class="truncate">${label}</span>
+                        </span>
+                        <span class="font-semibold text-slate-800">${formatRub(expByCategory[label])}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderClientDynamics(periodSessions) {
+            const activeClients = state.clients.filter(c => c.status === 'active');
+            const onlinePref = activeClients.filter(c => c.defaultFormat === 'online').length;
+            const offlinePref = activeClients.filter(c => c.defaultFormat === 'offline').length;
+
+            document.getElementById('client-stat-active').textContent = activeClients.length;
+            document.getElementById('client-stat-format-split').textContent = `${onlinePref} онл / ${offlinePref} офл`;
+
+            // Удержание (процент клиентов, у которых 2 и более сессий в базе)
+            const sessionCountsByClient = {};
+            let totalRevenueAllTime = 0;
+            state.sessions.filter(s => s.status !== 'cancelled').forEach(s => {
+                sessionCountsByClient[s.clientId] = (sessionCountsByClient[s.clientId] || 0) + 1;
+                totalRevenueAllTime += getSessionActualRevenue(s);
+            });
+
+            const clientsWithVisits = Object.keys(sessionCountsByClient).length;
+            const repeatClients = Object.values(sessionCountsByClient).filter(count => count >= 2).length;
+            const retentionRate = clientsWithVisits > 0 ? Math.round((repeatClients / clientsWithVisits) * 100) : 0;
+            const avgLtv = state.clients.length > 0 ? Math.round(totalRevenueAllTime / state.clients.length) : 0;
+
+            document.getElementById('client-stat-retention').textContent = `${retentionRate}%`;
+            document.getElementById('client-stat-ltv').textContent = formatRub(avgLtv);
+
+            // Топ клиентов за выбранный период
+            const periodClientMap = {};
+            periodSessions.forEach(s => {
+                if (!periodClientMap[s.clientId]) {
+                    periodClientMap[s.clientId] = { count: 0, rev: 0 };
+                }
+                periodClientMap[s.clientId].count += 1;
+                periodClientMap[s.clientId].rev += getSessionActualRevenue(s);
+            });
+
+            const topSorted = Object.entries(periodClientMap)
+                .sort((a, b) => b[1].rev - a[1].rev)
+                .slice(0, 4);
+
+            const topContainer = document.getElementById('top-clients-list');
+            if (topSorted.length === 0) {
+                topContainer.innerHTML = `<div class="text-xs text-slate-400 py-2">Нет сессий за выбранный период</div>`;
+            } else {
+                topContainer.innerHTML = topSorted.map(([clientId, data]) => {
+                    const cli = state.clients.find(c => c.id === clientId);
+                    if (!cli) return '';
+                    return `
+                        <div onclick="openClientDrawer('${cli.id}')" class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 cursor-pointer transition-all">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-lg bg-sage-100 text-sage-700 font-bold text-xs flex items-center justify-center">
+                                    ${cli.name.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="text-xs font-semibold text-slate-800">${cli.name}</div>
+                                    <div class="text-[11px] text-slate-400">${data.count} сессий за период</div>
+                                </div>
+                            </div>
+                            <div class="text-xs font-bold text-slate-700">${formatRub(data.rev)}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function renderOfficeUtilization(periodSessions) {
+            const container = document.getElementById('office-utilization-list');
+            if (state.offices.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-400">Нет добавленных кабинетов</div>`;
+                return;
+            }
+
+            container.innerHTML = state.offices.map(office => {
+                const officeSessions = periodSessions.filter(s => s.format === 'offline' && s.officeId === office.id);
+                const totalMinutes = officeSessions.reduce((acc, s) => acc + Number(s.duration || 50), 0);
+                const totalHours = (totalMinutes / 60).toFixed(1);
+                const rentCost = officeSessions.reduce((acc, s) => acc + getSessionRentCost(s), 0);
+                const generatedRev = officeSessions.reduce((acc, s) => acc + getSessionActualRevenue(s), 0);
+                const netFromOffice = generatedRev - rentCost;
+
+                return `
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-bold text-slate-800">${office.name}</div>
+                                <div class="text-[11px] text-slate-400">${office.address} • Ставка: ${formatRub(office.hourlyRate)}/ч</div>
+                            </div>
+                            <span class="text-xs font-semibold bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-slate-700">
+                                ${totalHours} ч (${officeSessions.length} сессий)
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
+                            <div>
+                                <span class="text-slate-400 block">Затраты на аренду:</span>
+                                <span class="font-semibold text-rose-600">${formatRub(rentCost)}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block">Выручка в точке:</span>
+                                <span class="font-semibold text-slate-800">${formatRub(generatedRev)}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block">Чистый профит:</span>
+                                <span class="font-bold text-emerald-600">${formatRub(netFromOffice)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // =================================================================
+        // МОДУЛЬ Б: ИНТЕРАКТИВНЫЙ КАЛЕНДАРЬ И ЗАПИСЬ НА СЕССИИ
+        // =================================================================
+        function setCalendarView(view) {
+            calendarView = view;
+            document.querySelectorAll('.cal-view-btn').forEach(btn => {
+                btn.className = 'cal-view-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900';
+            });
+            document.getElementById(`cal-view-${view}`).className = 'cal-view-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-900 shadow-xs';
+            renderCalendar();
+        }
+
+        function navigateCalendar(direction) {
+            if (direction === 0) {
+                calendarCursorDate = new Date();
+            } else {
+                if (calendarView === 'day') {
+                    calendarCursorDate.setDate(calendarCursorDate.getDate() + direction);
+                } else if (calendarView === 'week' || calendarView === 'list') {
+                    calendarCursorDate.setDate(calendarCursorDate.getDate() + direction * 7);
+                } else if (calendarView === 'month') {
+                    calendarCursorDate.setMonth(calendarCursorDate.getMonth() + direction);
+                }
+            }
+            renderCalendar();
+        }
+
+        function toYMD(dateObj) {
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function renderCalendar() {
+            const formatFilter = document.getElementById('cal-filter-format').value;
+            const paymentFilter = document.getElementById('cal-filter-payment').value;
+
+            const filteredSessions = state.sessions.filter(s => {
+                if (formatFilter !== 'all' && s.format !== formatFilter) return false;
+                if (paymentFilter !== 'all' && s.paymentStatus !== paymentFilter) return false;
+                return true;
+            });
+
+            const container = document.getElementById('calendar-container');
+            const labelEl = document.getElementById('calendar-current-label');
+
+            if (calendarView === 'week') {
+                renderWeekCalendar(container, labelEl, filteredSessions);
+            } else if (calendarView === 'day') {
+                renderDayCalendar(container, labelEl, filteredSessions);
+            } else if (calendarView === 'month') {
+                renderMonthCalendar(container, labelEl, filteredSessions);
+            } else {
+                renderListCalendar(container, labelEl, filteredSessions);
+            }
+        }
+
+        // Формирование мини-карточки сессии для календаря
+        function buildSessionCardHTML(s) {
+            const client = state.clients.find(c => c.id === s.clientId);
+            const office = state.offices.find(o => o.id === s.officeId);
+            const clientName = client ? client.name : 'Неизвестный клиент';
+
+            const payColors = {
+                paid: 'border-l-4 border-l-emerald-500 bg-emerald-50/40 hover:bg-emerald-50',
+                prepaid: 'border-l-4 border-l-amber-500 bg-amber-50/50 hover:bg-amber-50',
+                unpaid: 'border-l-4 border-l-rose-500 bg-rose-50/40 hover:bg-rose-50',
+                refund: 'border-l-4 border-l-slate-400 bg-slate-100 opacity-70'
+            };
+
+            const payBadge = {
+                paid: '<span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Оплачено</span>',
+                prepaid: `<span class="text-[10px] font-semibold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">Предоплата ${s.prepaidAmount}₽</span>`,
+                unpaid: '<span class="text-[10px] font-semibold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">Не оплачено</span>',
+                refund: '<span class="text-[10px] font-semibold text-slate-600 bg-slate-200 px-1.5 py-0.5 rounded">Возврат</span>'
+            };
+
+            const formatBadge = s.format === 'online'
+                ? `<span class="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.5 rounded"><i class="ph ph-video-camera"></i> Онлайн</span>`
+                : `<span class="inline-flex items-center gap-1 text-[10px] font-medium text-sage-800 bg-sage-100 border border-sage-200 px-1.5 py-0.5 rounded truncate max-w-[140px]"><i class="ph ph-buildings"></i> ${office ? office.name : 'Офлайн'}</span>`;
+
+            return `
+                <div onclick="openSessionModal('${s.id}')" class="p-2.5 rounded-xl border border-slate-200/80 ${payColors[s.paymentStatus] || payColors.unpaid} cursor-pointer transition-all shadow-2xs space-y-1.5">
+                    <div class="flex items-center justify-between gap-1">
+                        <span class="text-xs font-bold text-slate-800">${s.time} <span class="text-[10px] font-normal text-slate-400">(${s.duration}м)</span></span>
+                        ${payBadge[s.paymentStatus] || ''}
+                    </div>
+                    <div class="text-xs font-semibold text-slate-900 leading-snug truncate">${clientName}</div>
+                    <div class="flex items-center justify-between gap-1 pt-0.5">
+                        ${formatBadge}
+                        <span class="text-[11px] font-bold text-slate-700">${formatRub(s.price)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWeekCalendar(container, labelEl, sessions) {
+            const cur = new Date(calendarCursorDate);
+            const dayOfWeek = cur.getDay() === 0 ? 6 : cur.getDay() - 1;
+            const monday = new Date(cur);
+            monday.setDate(cur.getDate() - dayOfWeek);
+
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                days.push(d);
+            }
+
+            const startStr = days[0].toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            const endStr = days[6].toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+            labelEl.textContent = `${startStr} — ${endStr}`;
+
+            const todayYMD = toYMD(new Date());
+            const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+            let html = `<div class="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-slate-200 min-h-[520px]">`;
+
+            days.forEach((d, idx) => {
+                const ymd = toYMD(d);
+                const isToday = ymd === todayYMD;
+                const daySessions = sessions
+                    .filter(s => s.date === ymd)
+                    .sort((a, b) => a.time.localeCompare(b.time));
+
+                html += `
+                    <div class="flex flex-col ${isToday ? 'bg-sage-50/30' : 'bg-white'}">
+                        <div class="p-3 border-b border-slate-100 flex items-center justify-between ${isToday ? 'bg-sage-100/60' : 'bg-slate-50/60'}">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-semibold text-slate-500">${dayNames[idx]}</span>
+                                <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isToday ? 'bg-sage-600 text-white' : 'text-slate-800'}">${d.getDate()}</span>
+                            </div>
+                            <button onclick="openSessionModal(null, '${ymd}')" class="text-slate-400 hover:text-sage-600 p-1 rounded-lg" title="Добавить сессию на этот день">
+                                <i class="ph ph-plus text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="p-2 space-y-2 flex-1">
+                            ${daySessions.length ? daySessions.map(s => buildSessionCardHTML(s)).join('') : `<div class="text-[11px] text-slate-300 text-center py-8">Нет записей</div>`}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderDayCalendar(container, labelEl, sessions) {
+            const ymd = toYMD(calendarCursorDate);
+            labelEl.textContent = calendarCursorDate.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+
+            const daySessions = sessions
+                .filter(s => s.date === ymd)
+                .sort((a, b) => a.time.localeCompare(b.time));
+
+            container.innerHTML = `
+                <div class="p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-slate-800 text-sm">Расписание на день (${daySessions.length} сессий)</h4>
+                        <button onclick="openSessionModal(null, '${ymd}')" class="text-xs bg-sage-50 text-sage-700 hover:bg-sage-100 font-medium px-3 py-1.5 rounded-xl">
+                            + Добавить сессию на ${formatDateHuman(ymd)}
+                        </button>
+                    </div>
+                    ${daySessions.length === 0 ? `<div class="text-center py-12 text-slate-400 text-xs">На выбранный день сессий не запланировано</div>` : `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            ${daySessions.map(s => buildSessionCardHTML(s)).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function renderMonthCalendar(container, labelEl, sessions) {
+            const year = calendarCursorDate.getFullYear();
+            const month = calendarCursorDate.getMonth();
+            labelEl.textContent = calendarCursorDate.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+            const totalDays = lastDay.getDate();
+            const todayYMD = toYMD(new Date());
+
+            const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+            let html = `
+                <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center py-2 text-xs font-semibold text-slate-500">
+                    ${dayNames.map(d => `<div>${d}</div>`).join('')}
+                </div>
+                <div class="grid grid-cols-7 divide-x divide-y divide-slate-100">
+            `;
+
+            for (let i = 0; i < startOffset; i++) {
+                html += `<div class="min-h-[100px] bg-slate-50/40 p-2"></div>`;
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const d = new Date(year, month, day);
+                const ymd = toYMD(d);
+                const isToday = ymd === todayYMD;
+                const daySessions = sessions.filter(s => s.date === ymd).sort((a, b) => a.time.localeCompare(b.time));
+
+                html += `
+                    <div class="min-h-[110px] p-2 hover:bg-slate-50/60 transition-all flex flex-col justify-between ${isToday ? 'bg-sage-50/40' : ''}">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold ${isToday ? 'bg-sage-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-slate-700'}">${day}</span>
+                            <button onclick="openSessionModal(null, '${ymd}')" class="text-slate-300 hover:text-sage-600"><i class="ph ph-plus text-xs"></i></button>
+                        </div>
+                        <div class="space-y-1 mt-1">
+                            ${daySessions.slice(0, 3).map(s => {
+                                const cli = state.clients.find(c => c.id === s.clientId);
+                                const dotColor = s.paymentStatus === 'paid' ? 'bg-emerald-500' : (s.paymentStatus === 'prepaid' ? 'bg-amber-500' : 'bg-rose-500');
+                                return `
+                                    <div onclick="openSessionModal('${s.id}')" class="text-[10px] px-1.5 py-1 rounded bg-white border border-slate-200 truncate cursor-pointer hover:border-sage-400 flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}"></span>
+                                        <span class="font-semibold">${s.time}</span>
+                                        <span class="truncate text-slate-600">${cli ? cli.name.split(' ')[0] : ''}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                            ${daySessions.length > 3 ? `<div class="text-[10px] text-slate-400 text-center">+ еще ${daySessions.length - 3}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderListCalendar(container, labelEl, sessions) {
+            labelEl.textContent = 'Все сессии (Список)';
+            const sorted = [...sessions].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase text-slate-400 bg-slate-50/60">
+                                <th class="py-3 px-4">Дата и Время</th>
+                                <th class="py-3 px-4">Клиент</th>
+                                <th class="py-3 px-4">Услуга</th>
+                                <th class="py-3 px-4">Формат и Кабинет</th>
+                                <th class="py-3 px-4">Статус оплаты</th>
+                                <th class="py-3 px-4 text-right">Стоимость / Аренда</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-xs">
+                            ${sorted.map(s => {
+                                const cli = state.clients.find(c => c.id === s.clientId);
+                                const srv = state.services.find(x => x.id === s.serviceId);
+                                const off = state.offices.find(o => o.id === s.officeId);
+                                const rent = getSessionRentCost(s);
+                                return `
+                                    <tr onclick="openSessionModal('${s.id}')" class="hover:bg-slate-50 cursor-pointer">
+                                        <td class="py-3 px-4 font-semibold text-slate-800">${formatDateHuman(s.date)}, ${s.time}</td>
+                                        <td class="py-3 px-4 font-medium text-slate-800">${cli ? cli.name : '—'}</td>
+                                        <td class="py-3 px-4 text-slate-600">${srv ? srv.name : '—'}</td>
+                                        <td class="py-3 px-4">
+                                            ${s.format === 'online' 
+                                                ? '<span class="text-indigo-600 font-medium"><i class="ph ph-video-camera"></i> Онлайн</span>' 
+                                                : `<span class="text-sage-700 font-medium"><i class="ph ph-buildings"></i> ${off ? off.name : 'Офлайн'}</span>`}
+                                        </td>
+                                        <td class="py-3 px-4">${s.paymentStatus === 'paid' ? '🟢 Оплачено' : (s.paymentStatus === 'prepaid' ? `🟡 Предоплата (${formatRub(s.prepaidAmount)})` : '🔴 Не оплачено')}</td>
+                                        <td class="py-3 px-4 text-right">
+                                            <span class="font-bold text-slate-800">${formatRub(s.price)}</span>
+                                            ${rent > 0 ? `<span class="block text-[10px] text-rose-500">Аренда: -${formatRub(rent)}</span>` : ''}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Модальное окно создания/редактирования сессии
+        function openSessionModal(sessionId = null, defaultDate = null, presetClientId = null) {
+            const clientSelect = document.getElementById('session-client');
+            const serviceSelect = document.getElementById('session-service');
+            const officeSelect = document.getElementById('session-office');
+
+            clientSelect.innerHTML = state.clients.map(c => `<option value="${c.id}">${c.name} (${c.defaultFormat === 'online' ? 'Онлайн' : 'Офлайн'})</option>`).join('');
+            serviceSelect.innerHTML = state.services.map(s => `<option value="${s.id}">${s.name} — ${formatRub(s.price)}</option>`).join('');
+            officeSelect.innerHTML = state.offices.map(o => `<option value="${o.id}">${o.name} (${formatRub(o.hourlyRate)}/ч)</option>`).join('');
+
+            const deleteBtn = document.getElementById('btn-delete-session');
+
+            if (sessionId) {
+                const s = state.sessions.find(x => x.id === sessionId);
+                if (!s) return;
+                document.getElementById('modal-session-title').textContent = 'Редактирование сессии и оплаты';
+                document.getElementById('session-id').value = s.id;
+                clientSelect.value = s.clientId;
+                serviceSelect.value = s.serviceId;
+                document.getElementById('session-date').value = s.date;
+                document.getElementById('session-time').value = s.time;
+                document.getElementById('session-duration').value = s.duration;
+                document.getElementById('session-price').value = s.price;
+                setSessionFormat(s.format);
+                if (s.officeId) officeSelect.value = s.officeId;
+                document.getElementById('session-status').value = s.status || 'scheduled';
+                document.getElementById('session-payment-status').value = s.paymentStatus || 'unpaid';
+                document.getElementById('session-prepaid-amount').value = s.prepaidAmount || 0;
+                document.getElementById('session-payment-method').value = s.paymentMethod || 'transfer';
+                document.getElementById('session-notes').value = s.notes || '';
+                deleteBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('modal-session-title').textContent = 'Новая запись на сессию';
+                document.getElementById('session-id').value = '';
+                if (presetClientId) clientSelect.value = presetClientId;
+                document.getElementById('session-date').value = defaultDate || getRelativeDateStr(0);
+                document.getElementById('session-time').value = '14:00';
+                document.getElementById('session-status').value = 'scheduled';
+                document.getElementById('session-payment-status').value = 'unpaid';
+                document.getElementById('session-prepaid-amount').value = 0;
+                document.getElementById('session-notes').value = '';
+                deleteBtn.classList.add('hidden');
+                onSessionClientChange();
+                onSessionServiceChange();
+            }
+
+            calculateSessionRentAndBalance();
+            validateOfficeConflict();
+            document.getElementById('modal-session').classList.remove('hidden');
+        }
+
+        function onSessionClientChange() {
+            const clientId = document.getElementById('session-client').value;
+            const client = state.clients.find(c => c.id === clientId);
+            if (client) {
+                setSessionFormat(client.defaultFormat);
+            }
+        }
+
+        function onSessionServiceChange() {
+            const serviceId = document.getElementById('session-service').value;
+            const srv = state.services.find(s => s.id === serviceId);
+            if (srv) {
+                document.getElementById('session-duration').value = srv.duration;
+                document.getElementById('session-price').value = srv.price;
+                if (srv.format !== 'any') {
+                    setSessionFormat(srv.format);
+                }
+                calculateSessionRentAndBalance();
+            }
+        }
+
+        function setSessionFormat(fmt) {
+            document.getElementById('session-format').value = fmt;
+            const btnOnline = document.getElementById('btn-format-online');
+            const btnOffline = document.getElementById('btn-format-offline');
+            const officeBlock = document.getElementById('session-office-block');
+
+            if (fmt === 'online') {
+                btnOnline.className = 'px-3 py-1 rounded-md text-xs font-medium bg-indigo-600 text-white transition-all';
+                btnOffline.className = 'px-3 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition-all';
+                officeBlock.classList.add('hidden');
+            } else {
+                btnOffline.className = 'px-3 py-1 rounded-md text-xs font-medium bg-sage-600 text-white transition-all';
+                btnOnline.className = 'px-3 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition-all';
+                officeBlock.classList.remove('hidden');
+            }
+            calculateSessionRentAndBalance();
+            validateOfficeConflict();
+        }
+
+        function onPaymentStatusChange() {
+            const st = document.getElementById('session-payment-status').value;
+            const price = Number(document.getElementById('session-price').value) || 0;
+            const prepaidInput = document.getElementById('session-prepaid-amount');
+
+            if (st === 'paid') {
+                prepaidInput.value = price;
+            } else if (st === 'unpaid' || st === 'refund') {
+                prepaidInput.value = 0;
+            } else if (st === 'prepaid' && Number(prepaidInput.value) === 0) {
+                prepaidInput.value = Math.round(price / 2);
+            }
+            updateRemainingBalance();
+        }
+
+        function updateRemainingBalance() {
+            const price = Number(document.getElementById('session-price').value) || 0;
+            const prepaid = Number(document.getElementById('session-prepaid-amount').value) || 0;
+            const st = document.getElementById('session-payment-status').value;
+            const rem = st === 'paid' || st === 'refund' ? 0 : Math.max(0, price - prepaid);
+            document.getElementById('session-remaining-balance').textContent = formatRub(rem);
+        }
+
+        function calculateSessionRentAndBalance() {
+            const fmt = document.getElementById('session-format').value;
+            const officeId = document.getElementById('session-office').value;
+            const duration = Number(document.getElementById('session-duration').value) || 50;
+
+            if (fmt === 'offline' && officeId) {
+                const office = state.offices.find(o => o.id === officeId);
+                if (office) {
+                    const rent = Math.round(office.hourlyRate * (duration / 60));
+                    document.getElementById('session-rent-preview').textContent = formatRub(rent);
+                }
+            }
+            updateRemainingBalance();
+        }
+
+        function validateOfficeConflict() {
+            const fmt = document.getElementById('session-format').value;
+            const warningEl = document.getElementById('office-conflict-warning');
+            if (fmt !== 'offline') {
+                warningEl.classList.add('hidden');
+                return;
+            }
+            const currentId = document.getElementById('session-id').value;
+            const date = document.getElementById('session-date').value;
+            const time = document.getElementById('session-time').value;
+            const officeId = document.getElementById('session-office').value;
+
+            const conflict = state.sessions.some(s => 
+                s.id !== currentId &&
+                s.status !== 'cancelled' &&
+                s.format === 'offline' &&
+                s.officeId === officeId &&
+                s.date === date &&
+                s.time === time
+            );
+            warningEl.classList.toggle('hidden', !conflict);
+        }
+
+        function saveSession(e) {
+            e.preventDefault();
+            const id = document.getElementById('session-id').value;
+            const fmt = document.getElementById('session-format').value;
+
+            const sessionData = {
+                id: id || 'ses-' + Date.now(),
+                clientId: document.getElementById('session-client').value,
+                serviceId: document.getElementById('session-service').value,
+                date: document.getElementById('session-date').value,
+                time: document.getElementById('session-time').value,
+                duration: Number(document.getElementById('session-duration').value) || 50,
+                price: Number(document.getElementById('session-price').value) || 0,
+                format: fmt,
+                officeId: fmt === 'offline' ? document.getElementById('session-office').value : null,
+                status: document.getElementById('session-status').value,
+                paymentStatus: document.getElementById('session-payment-status').value,
+                prepaidAmount: Number(document.getElementById('session-prepaid-amount').value) || 0,
+                paymentMethod: document.getElementById('session-payment-method').value,
+                notes: document.getElementById('session-notes').value.trim()
+            };
+
+            if (id) {
+                const idx = state.sessions.findIndex(x => x.id === id);
+                if (idx !== -1) state.sessions[idx] = sessionData;
+            } else {
+                state.sessions.push(sessionData);
+            }
+
+            saveState();
+            closeModal('modal-session');
+            refreshCurrentTab();
+            showToast(id ? 'Сессия обновлена' : 'Сессия добавлена в расписание');
+        }
+
+        function deleteSession() {
+            const id = document.getElementById('session-id').value;
+            if (!id) return;
+            state.sessions = state.sessions.filter(s => s.id !== id);
+            saveState();
+            closeModal('modal-session');
+            refreshCurrentTab();
+            showToast('Запись сессии удалена');
+        }
+
+        // =================================================================
+        // МОДУЛЬ А.1: БАЗА КЛИЕНТОВ И DRAWER ИСТОРИИ
+        // =================================================================
+        function renderClients() {
+            const q = document.getElementById('client-search').value.toLowerCase().trim();
+            const statusFilter = document.getElementById('client-filter-status').value;
+            const formatFilter = document.getElementById('client-filter-format').value;
+
+            const filtered = state.clients.filter(c => {
+                if (statusFilter !== 'all' && c.status !== statusFilter) return false;
+                if (formatFilter !== 'all' && c.defaultFormat !== formatFilter) return false;
+                if (q && !(c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q) || (c.messenger || '').toLowerCase().includes(q))) {
+                    return false;
+                }
+                return true;
+            });
+
+            const grid = document.getElementById('clients-grid');
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full bg-white p-10 rounded-2xl border border-slate-200 text-center text-xs text-slate-400">Клиенты по заданным критериям не найдены</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(c => {
+                const clientSessions = state.sessions.filter(s => s.clientId === c.id && s.status !== 'cancelled');
+                const ltv = clientSessions.reduce((acc, s) => acc + getSessionActualRevenue(s), 0);
+                const debt = clientSessions.reduce((acc, s) => acc + getSessionReceivable(s), 0);
+
+                return `
+                    <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 hover:border-sage-400 transition-all flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-sage-100 text-sage-800 font-bold text-sm flex items-center justify-center shrink-0">
+                                        ${c.name.slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <h3 onclick="openClientDrawer('${c.id}')" class="font-bold text-slate-800 text-sm hover:text-sage-600 cursor-pointer leading-snug">${c.name}</h3>
+                                        <div class="text-xs text-slate-500 mt-0.5">${c.phone} • <span class="text-indigo-600">${c.messenger || ''}</span></div>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${c.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
+                                    ${c.status === 'active' ? 'Активный' : 'Архив'}
+                                </span>
+                            </div>
+
+                            <div class="mt-3 p-2.5 rounded-xl bg-amber-50/50 border border-amber-200/50 text-[11px] text-slate-600">
+                                <div class="font-semibold text-amber-800 mb-0.5 flex items-center justify-between">
+                                    <span><i class="ph ph-lock-key"></i> Анамнез / Безопасность</span>
+                                    <span class="text-[10px] font-normal text-amber-600">Наведите для чтения</span>
+                                </div>
+                                <p class="blur-notes line-clamp-2">${c.notes || 'Заметки не добавлены'}</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-3">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block">Сессий / LTV</span>
+                                    <span class="font-bold text-slate-800">${clientSessions.length} / ${formatRub(ltv)}</span>
+                                </div>
+                                ${debt > 0 ? `
+                                <div>
+                                    <span class="text-[10px] text-amber-600 block">К доплате:</span>
+                                    <span class="font-bold text-amber-600">${formatRub(debt)}</span>
+                                </div>` : ''}
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="openSessionModal(null, null, '${c.id}')" class="px-2.5 py-1.5 rounded-lg bg-sage-50 hover:bg-sage-100 text-sage-700 font-medium text-xs" title="Записать на сессию">
+                                    + Сессия
+                                </button>
+                                <button onclick="openClientDrawer('${c.id}')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs">
+                                    Профиль
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openClientDrawer(clientId) {
+            const c = state.clients.find(x => x.id === clientId);
+            if (!c) return;
+
+            document.getElementById('drawer-client-avatar').textContent = c.name.slice(0, 2).toUpperCase();
+            document.getElementById('drawer-client-name').textContent = c.name;
+            document.getElementById('drawer-client-phone').textContent = c.phone;
+            document.getElementById('drawer-client-messenger').textContent = c.messenger || 'Не указан';
+            document.getElementById('drawer-client-notes').textContent = c.notes || 'Анамнез и заметки безопасности не заполнены.';
+            document.getElementById('drawer-client-notes').classList.remove('revealed');
+
+            document.getElementById('drawer-btn-edit').onclick = () => { closeClientDrawer(); openClientModal(c.id); };
+            document.getElementById('drawer-btn-new-session').onclick = () => { closeClientDrawer(); openSessionModal(null, null, c.id); };
+
+            const clientSessions = state.sessions
+                .filter(s => s.clientId === c.id)
+                .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+
+            const ltv = clientSessions.reduce((acc, s) => acc + getSessionActualRevenue(s), 0);
+            const debt = clientSessions.reduce((acc, s) => acc + getSessionReceivable(s), 0);
+
+            document.getElementById('drawer-client-sessions-count').textContent = clientSessions.length;
+            document.getElementById('drawer-client-ltv').textContent = formatRub(ltv);
+            document.getElementById('drawer-client-debt').textContent = debt > 0 ? `Долг ${formatRub(debt)}` : '0 ₽';
+
+            const historyEl = document.getElementById('drawer-client-history');
+            if (clientSessions.length === 0) {
+                historyEl.innerHTML = `<div class="text-slate-400 text-center py-6">У клиента пока нет истории посещений</div>`;
+            } else {
+                historyEl.innerHTML = clientSessions.map(s => {
+                    const srv = state.services.find(x => x.id === s.serviceId);
+                    const off = state.offices.find(o => o.id === s.officeId);
+                    return `
+                        <div onclick="closeClientDrawer(); openSessionModal('${s.id}')" class="p-3 rounded-xl border border-slate-200/80 hover:border-sage-400 cursor-pointer space-y-1 bg-slate-50/50">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-slate-800">${formatDateHuman(s.date)} в ${s.time}</span>
+                                <span class="font-bold text-slate-800">${formatRub(s.price)}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 flex items-center justify-between">
+                                <span>${srv ? srv.name : 'Сессия'} (${s.format === 'online' ? 'Онлайн' : (off ? off.name : 'Офлайн')})</span>
+                                <span>${s.paymentStatus === 'paid' ? '🟢 Оплачено' : (s.paymentStatus === 'prepaid' ? `🟡 Предоплата ${s.prepaidAmount}₽` : '🔴 Не оплачено')}</span>
+                            </div>
+                            ${s.notes ? `<div class="text-[11px] text-slate-600 pt-1 border-t border-slate-200/60 mt-1">${s.notes}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('drawer-client-backdrop').classList.remove('hidden');
+            document.getElementById('drawer-client').classList.remove('translate-x-full');
+        }
+
+        function closeClientDrawer() {
+            document.getElementById('drawer-client-backdrop').classList.add('hidden');
+            document.getElementById('drawer-client').classList.add('translate-x-full');
+        }
+
+        function toggleBlurNotes() {
+            document.getElementById('drawer-client-notes').classList.toggle('revealed');
+        }
+
+        function openClientModal(clientId = null) {
+            const delBtn = document.getElementById('btn-delete-client');
+            if (clientId) {
+                const c = state.clients.find(x => x.id === clientId);
+                if (!c) return;
+                document.getElementById('modal-client-title').textContent = 'Редактировать клиента';
+                document.getElementById('client-id').value = c.id;
+                document.getElementById('client-name').value = c.name;
+                document.getElementById('client-phone').value = c.phone;
+                document.getElementById('client-messenger').value = c.messenger || '';
+                document.getElementById('client-format').value = c.defaultFormat || 'online';
+                document.getElementById('client-status').value = c.status || 'active';
+                document.getElementById('client-notes').value = c.notes || '';
+                delBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('modal-client-title').textContent = 'Новый клиент';
+                document.getElementById('client-id').value = '';
+                document.getElementById('form-client').reset();
+                delBtn.classList.add('hidden');
+            }
+            document.getElementById('modal-client').classList.remove('hidden');
+        }
+
+        function saveClient(e) {
+            e.preventDefault();
+            const id = document.getElementById('client-id').value;
+            const clientData = {
+                id: id || 'cli-' + Date.now(),
+                name: document.getElementById('client-name').value.trim(),
+                phone: document.getElementById('client-phone').value.trim(),
+                messenger: document.getElementById('client-messenger').value.trim(),
+                defaultFormat: document.getElementById('client-format').value,
+                status: document.getElementById('client-status').value,
+                notes: document.getElementById('client-notes').value.trim()
+            };
+
+            if (id) {
+                const idx = state.clients.findIndex(x => x.id === id);
+                if (idx !== -1) state.clients[idx] = clientData;
+            } else {
+                state.clients.unshift(clientData);
+            }
+            saveState();
+            closeModal('modal-client');
+            refreshCurrentTab();
+            showToast('Профиль клиента сохранен');
+        }
+
+        function deleteClient() {
+            const id = document.getElementById('client-id').value;
+            if (!id) return;
+            state.clients = state.clients.filter(c => c.id !== id);
+            saveState();
+            closeModal('modal-client');
+            refreshCurrentTab();
+            showToast('Клиент удален из базы');
+        }
+
+        // =================================================================
+        // МОДУЛЬ А.4: ФИНАНСЫ, ЗАТРАТЫ И РУЧНОЙ ВВОД НАЛОГОВ
+        // =================================================================
+        function renderFinances() {
+            // Заполнение селекта фильтрации статей
+            const filterSel = document.getElementById('finance-filter-category');
+            const currentFilter = filterSel.value;
+            filterSel.innerHTML = `<option value="all">Все статьи затрат</option>` +
+                state.expenseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if ([...filterSel.options].some(o => o.value === currentFilter)) {
+                filterSel.value = currentFilter;
+            }
+
+            // Собираем единый журнал затрат: ручные расходы + авто-аренда из офлайн-сессий
+            const combinedRecords = [];
+
+            state.expenses.forEach(e => {
+                const cat = state.expenseCategories.find(c => c.id === e.categoryId);
+                combinedRecords.push({
+                    id: e.id,
+                    date: e.date,
+                    categoryId: e.categoryId,
+                    categoryName: cat ? cat.name : 'Прочее',
+                    type: cat && cat.type === 'fixed' ? 'Постоянные' : 'Переменные',
+                    comment: e.comment || 'Ручная запись расхода',
+                    amount: Number(e.amount || 0),
+                    isAutoRent: false
+                });
+            });
+
+            state.sessions.forEach(s => {
+                const rent = getSessionRentCost(s);
+                if (rent > 0) {
+                    const cli = state.clients.find(c => c.id === s.clientId);
+                    const off = state.offices.find(o => o.id === s.officeId);
+                    combinedRecords.push({
+                        id: 'rent-' + s.id,
+                        sessionId: s.id,
+                        date: s.date,
+                        categoryId: 'cat-rent',
+                        categoryName: 'Аренда кабинетов (Авто)',
+                        type: 'Переменные',
+                        comment: `${off ? off.name : 'Кабинет'} (${s.duration} мин) — клиент: ${cli ? cli.name : ''}`,
+                        amount: rent,
+                        isAutoRent: true
+                    });
+                }
+            });
+
+            const filtered = combinedRecords
+                .filter(r => filterSel.value === 'all' || r.categoryId === filterSel.value)
+                .sort((a, b) => b.date.localeCompare(a.date));
+
+            const tbody = document.getElementById('expenses-table-body');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">Записей о расходах нет</td></tr>`;
+            } else {
+                tbody.innerHTML = filtered.map(r => `
+                    <tr class="hover:bg-slate-50/80">
+                        <td class="py-3 px-4 font-medium text-slate-700 whitespace-nowrap">${formatDateHuman(r.date)}</td>
+                        <td class="py-3 px-4">
+                            <span class="font-semibold ${r.categoryId === 'cat-tax' ? 'text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md' : (r.isAutoRent ? 'text-sage-700 bg-sage-50 px-2 py-0.5 rounded-md' : 'text-slate-800')}">
+                                ${r.categoryName}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-500">${r.type}</td>
+                        <td class="py-3 px-4 text-slate-600">${r.comment}</td>
+                        <td class="py-3 px-4 text-right font-bold text-rose-600 whitespace-nowrap">-${formatRub(r.amount)}</td>
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                            ${r.isAutoRent 
+                                ? `<button onclick="openSessionModal('${r.sessionId}')" class="text-xs text-sage-600 hover:underline">К сессии</button>` 
+                                : `<button onclick="deleteExpense('${r.id}')" class="text-slate-400 hover:text-rose-600 p-1"><i class="ph ph-trash text-sm"></i></button>`
+                            }
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Отрисовка справочника статей затрат справа
+            const catList = document.getElementById('expense-categories-list');
+            catList.innerHTML = state.expenseCategories.map(c => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs">
+                    <div>
+                        <span class="font-semibold text-slate-800 block">${c.name}</span>
+                        <span class="text-[10px] text-slate-400">${c.type === 'fixed' ? 'Постоянные затраты' : 'Переменные затраты'}</span>
+                    </div>
+                    ${c.system ? `<span class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded">Системная</span>` : `
+                        <button onclick="deleteExpenseCategory('${c.id}')" class="text-slate-400 hover:text-rose-600 p-1"><i class="ph ph-trash"></i></button>
+                    `}
+                </div>
+            `).join('');
+        }
+
+        function openExpenseModal(presetType = null) {
+            const catSelect = document.getElementById('expense-category');
+            catSelect.innerHTML = state.expenseCategories
+                .filter(c => c.id !== 'cat-rent')
+                .map(c => `<option value="${c.id}">${c.name} (${c.type === 'fixed' ? 'Пост.' : 'Перем.'})</option>`).join('');
+
+            document.getElementById('expense-date').value = getRelativeDateStr(0);
+            document.getElementById('expense-amount').value = '';
+            document.getElementById('expense-comment').value = '';
+
+            if (presetType === 'tax') {
+                document.getElementById('modal-expense-title').textContent = 'Внести налоговый платеж (вручную)';
+                catSelect.value = 'cat-tax';
+                document.getElementById('expense-comment').value = 'Оплата налога с дохода (ручная фиксация)';
+            } else {
+                document.getElementById('modal-expense-title').textContent = 'Добавить статью расхода';
+            }
+
+            document.getElementById('modal-expense').classList.remove('hidden');
+        }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            const exp = {
+                id: 'exp-' + Date.now(),
+                date: document.getElementById('expense-date').value,
+                amount: Number(document.getElementById('expense-amount').value) || 0,
+                categoryId: document.getElementById('expense-category').value,
+                comment: document.getElementById('expense-comment').value.trim()
+            };
+            state.expenses.unshift(exp);
+            saveState();
+            closeModal('modal-expense');
+            refreshCurrentTab();
+            showToast('Расход зафиксирован в журнале');
+        }
+
+        function deleteExpense(id) {
+            state.expenses = state.expenses.filter(e => e.id !== id);
+            saveState();
+            refreshCurrentTab();
+            showToast('Запись расхода удалена');
+        }
+
+        function openExpenseCategoryModal() {
+            document.getElementById('exp-cat-name').value = '';
+            document.getElementById('modal-expense-category').classList.remove('hidden');
+        }
+
+        function saveExpenseCategory(e) {
+            e.preventDefault();
+            state.expenseCategories.push({
+                id: 'cat-' + Date.now(),
+                name: document.getElementById('exp-cat-name').value.trim(),
+                type: document.getElementById('exp-cat-type').value,
+                system: false
+            });
+            saveState();
+            closeModal('modal-expense-category');
+            refreshCurrentTab();
+            showToast('Новая статья затрат добавлена');
+        }
+
+        function deleteExpenseCategory(id) {
+            state.expenseCategories = state.expenseCategories.filter(c => c.id !== id);
+            saveState();
+            refreshCurrentTab();
+            showToast('Статья затрат удалена');
+        }
+
+        // =================================================================
+        // МОДУЛИ А.2 И А.3: КАБИНЕТЫ И УСЛУГИ
+        // =================================================================
+        function renderCatalogs() {
+            // Отрисовка кабинетов
+            const officesGrid = document.getElementById('offices-grid');
+            officesGrid.innerHTML = state.offices.map(o => {
+                const monthBookings = state.sessions.filter(s => s.format === 'offline' && s.officeId === o.id && isDateInPeriod(s.date, 'month') && s.status !== 'cancelled');
+                const hoursBooked = (monthBookings.reduce((acc, s) => acc + Number(s.duration || 50), 0) / 60).toFixed(1);
+
+                return `
+                    <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-sm">${o.name}</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5"><i class="ph ph-map-pin text-sage-600"></i> ${o.address}</p>
+                                </div>
+                                <span class="text-xs font-bold text-sage-800 bg-sage-100 px-2.5 py-1 rounded-xl shrink-0">
+                                    ${formatRub(o.hourlyRate)}/час
+                                </span>
+                            </div>
+                            <div class="mt-3 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <span class="text-[10px] font-semibold uppercase text-slate-400 block mb-1">Оснащение кабинета:</span>
+                                ${o.equipment || 'Стандартное оснащение'}
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Бронь в этом месяце: <strong class="text-slate-800">${hoursBooked} ч</strong></span>
+                            <div class="flex items-center gap-1">
+                                <button onclick="openOfficeModal('${o.id}')" class="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100"><i class="ph ph-pencil-simple"></i></button>
+                                <button onclick="deleteOffice('${o.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"><i class="ph ph-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Отрисовка таблицы услуг
+            const srvBody = document.getElementById('services-table-body');
+            srvBody.innerHTML = state.services.map(s => `
+                <tr class="hover:bg-slate-50/80">
+                    <td class="py-3.5 px-4 font-semibold text-slate-800">${s.name}</td>
+                    <td class="py-3.5 px-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">${s.category}</span></td>
+                    <td class="py-3.5 px-4">
+                        ${s.format === 'online' ? '<span class="text-indigo-600 font-medium">Онлайн</span>' : (s.format === 'offline' ? '<span class="text-sage-700 font-medium">Офлайн</span>' : 'Онлайн и Офлайн')}
+                    </td>
+                    <td class="py-3.5 px-4 text-slate-600">${s.duration} мин</td>
+                    <td class="py-3.5 px-4 text-right font-bold text-slate-800">${formatRub(s.price)}</td>
+                    <td class="py-3.5 px-4 text-right">
+                        <button onclick="openServiceModal('${s.id}')" class="p-1.5 text-slate-500 hover:text-slate-800"><i class="ph ph-pencil-simple"></i></button>
+                        <button onclick="deleteService('${s.id}')" class="p-1.5 text-slate-400 hover:text-rose-600"><i class="ph ph-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openOfficeModal(officeId = null) {
+            if (officeId) {
+                const o = state.offices.find(x => x.id === officeId);
+                if (!o) return;
+                document.getElementById('modal-office-title').textContent = 'Редактировать кабинет';
+                document.getElementById('office-id').value = o.id;
+                document.getElementById('office-name').value = o.name;
+                document.getElementById('office-address').value = o.address;
+                document.getElementById('office-rate').value = o.hourlyRate;
+                document.getElementById('office-equipment').value = o.equipment || '';
+            } else {
+                document.getElementById('modal-office-title').textContent = 'Новый рабочий кабинет';
+                document.getElementById('office-id').value = '';
+                document.getElementById('office-name').value = '';
+                document.getElementById('office-address').value = '';
+                document.getElementById('office-rate').value = 900;
+                document.getElementById('office-equipment').value = '';
+            }
+            document.getElementById('modal-office').classList.remove('hidden');
+        }
+
+        function saveOffice(e) {
+            e.preventDefault();
+            const id = document.getElementById('office-id').value;
+            const data = {
+                id: id || 'off-' + Date.now(),
+                name: document.getElementById('office-name').value.trim(),
+                address: document.getElementById('office-address').value.trim(),
+                hourlyRate: Number(document.getElementById('office-rate').value) || 0,
+                equipment: document.getElementById('office-equipment').value.trim()
+            };
+            if (id) {
+                const idx = state.offices.findIndex(x => x.id === id);
+                if (idx !== -1) state.offices[idx] = data;
+            } else {
+                state.offices.push(data);
+            }
+            saveState();
+            closeModal('modal-office');
+            refreshCurrentTab();
+            showToast('Кабинет сохранен');
+        }
+
+        function deleteOffice(id) {
+            state.offices = state.offices.filter(o => o.id !== id);
+            saveState();
+            refreshCurrentTab();
+            showToast('Кабинет удален');
+        }
+
+        function openServiceModal(serviceId = null) {
+            if (serviceId) {
+                const s = state.services.find(x => x.id === serviceId);
+                if (!s) return;
+                document.getElementById('modal-service-title').textContent = 'Редактировать услугу';
+                document.getElementById('service-id').value = s.id;
+                document.getElementById('service-name').value = s.name;
+                document.getElementById('service-category').value = s.category;
+                document.getElementById('service-format').value = s.format;
+                document.getElementById('service-duration').value = s.duration;
+                document.getElementById('service-price').value = s.price;
+            } else {
+                document.getElementById('modal-service-title').textContent = 'Новая услуга';
+                document.getElementById('service-id').value = '';
+                document.getElementById('service-name').value = '';
+                document.getElementById('service-duration').value = 50;
+                document.getElementById('service-price').value = 5500;
+            }
+            document.getElementById('modal-service').classList.remove('hidden');
+        }
+
+        function saveService(e) {
+            e.preventDefault();
+            const id = document.getElementById('service-id').value;
+            const data = {
+                id: id || 'srv-' + Date.now(),
+                name: document.getElementById('service-name').value.trim(),
+                category: document.getElementById('service-category').value,
+                format: document.getElementById('service-format').value,
+                duration: Number(document.getElementById('service-duration').value) || 50,
+                price: Number(document.getElementById('service-price').value) || 0
+            };
+            if (id) {
+                const idx = state.services.findIndex(x => x.id === id);
+                if (idx !== -1) state.services[idx] = data;
+            } else {
+                state.services.push(data);
+            }
+            saveState();
+            closeModal('modal-service');
+            refreshCurrentTab();
+            showToast('Услуга сохранена');
+        }
+
+        function deleteService(id) {
+            state.services = state.services.filter(s => s.id !== id);
+            saveState();
+            refreshCurrentTab();
+            showToast('Услуга удалена');
+        }
+
+        // Закрытие и сброс модальных окон
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function openResetModal() {
+            document.getElementById('modal-reset').classList.remove('hidden');
+        }
+
+        function confirmResetDemoData() {
+            localStorage.removeItem(STORAGE_KEY);
+            state = generateInitialDemoData();
+            saveState();
+            closeModal('modal-reset');
+            refreshCurrentTab();
+            showToast('Демонстрационные данные восстановлены');
+        }
+
+        // Инициализация при загрузке окна
+        window.onload = function () {
+            loadState();
+            switchTab('dashboard');
+        };
+    </script>
+</body>
+</html>
